@@ -1,5 +1,6 @@
 node_modules
 .env
 .eslintrc.json
+debug.txt
 package-lock.json
 package.json
