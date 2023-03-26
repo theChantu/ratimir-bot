@@ -1,0 +1,32 @@
+{
+  "name": "ratimir-bot",
+  "version": "1.0.0",
+  "description": "A discord bot.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrChantu/ratimir-bot.git"
+  },
+  "keywords": [],
+  "author": "Chantu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MrChantu/ratimir-bot/issues"
+  },
+  "homepage": "https://github.com/MrChantu/ratimir-bot#readme",
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3",
+    "fs": "^0.0.1-security",
+    "openai": "^3.2.1",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "eslint": "^8.35.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.27.5"
+  }
+}

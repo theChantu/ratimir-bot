@@ -4,4 +4,3 @@ node_modules
 config.json
 debug.txt
 package-lock.json
-package.json
