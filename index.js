@@ -90,9 +90,18 @@ client.on('messageCreate', async (message) => {
         prevMessages.reverse();
 
         prevMessages.forEach((msg) => {
-            if (message.content.startsWith('!')) return;
+            if (!msg.content.startsWith('<@1078379206926405802>')) return;
             if (msg.author.id !== client.user.id && message.author.bot) return;
             if (msg.author.id !== message.author.id) return;
+
+            if (msg.content.startsWith('<@1078379206926405802> ')) {
+                msg.content = msg.content.replace(
+                    '<@1078379206926405802> ',
+                    ''
+                );
+            } else if (msg.content.startsWith('<@1078379206926405802>')) {
+                msg.content = msg.content.replace('<@1078379206926405802>', '');
+            }
 
             conversationLog.push({
                 role: 'user',
