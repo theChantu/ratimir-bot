@@ -85,7 +85,7 @@ client.on('messageCreate', async (message) => {
         await message.channel.sendTyping();
 
         let prevMessages = await message.channel.messages.fetch({
-            limit: 15,
+            limit: 5,
         });
         prevMessages.reverse();
 
