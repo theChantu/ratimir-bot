@@ -35,6 +35,10 @@ for (const folder of commandFolders) {
     }
 }
 
+function getStringLength(string) {
+    return string.length - 2000;
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -113,7 +117,16 @@ client.on('messageCreate', async (message) => {
                 model: 'gpt-3.5-turbo',
                 messages: conversationLog,
             });
-            message.channel.send(result.data.choices[0].message.content);
+            let aiMessage = await result.data.choices[0].message.content;
+            if (aiMessage.length > 2000) {
+                const subtractionLength = getStringLength(aiMessage);
+                const charOverflow = '\n(CHARACTER OVERFLOW)';
+                aiMessage = aiMessage.substring(0, aiMessage.length - (subtractionLength + 22));
+                aiMessage = aiMessage.concat(charOverflow);
+                message.channel.send(aiMessage);
+            } else {
+                message.channel.send(aiMessage);
+            }
         } catch (error) {
             console.log(error);
             message.channel.send(
