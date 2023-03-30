@@ -39,6 +39,22 @@ function getStringLength(string) {
     return string.length - 2000;
 }
 
+function checkMessage(message, array = []) {
+    if (message.length <= 2000) array.push(message);
+    if (message.length > 2000) {
+        const subtractionLength = getStringLength(message);
+        const FirstMessage = message.slice(0, message.length - subtractionLength);
+        const anotherMessage = message.slice(2000, message.length);
+        array.push(FirstMessage);
+        if (anotherMessage.length <= 2000) {
+            array.push(anotherMessage);
+        } else {
+            checkMessage(anotherMessage, array);
+        }
+    }
+    return array;
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -118,14 +134,9 @@ client.on('messageCreate', async (message) => {
                 messages: conversationLog,
             });
             let aiMessage = await result.data.choices[0].message.content;
-            if (aiMessage.length > 2000) {
-                const subtractionLength = getStringLength(aiMessage);
-                const charOverflow = '\n(CHARACTER OVERFLOW)';
-                aiMessage = aiMessage.substring(0, aiMessage.length - (subtractionLength + 22));
-                aiMessage = aiMessage.concat(charOverflow);
-                message.channel.send(aiMessage);
-            } else {
-                message.channel.send(aiMessage);
+            const array = checkMessage(aiMessage);
+            for (let i = 0; i < array.length; i++) {
+                message.channel.send(array[i]);
             }
         } catch (error) {
             console.log(error);
