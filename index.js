@@ -43,7 +43,10 @@ function checkMessage(message, array = []) {
     if (message.length <= 2000) array.push(message);
     if (message.length > 2000) {
         const subtractionLength = getStringLength(message);
-        const FirstMessage = message.slice(0, message.length - subtractionLength);
+        const FirstMessage = message.slice(
+            0,
+            message.length - subtractionLength
+        );
         const anotherMessage = message.slice(2000, message.length);
         array.push(FirstMessage);
         if (anotherMessage.length <= 2000) {
@@ -94,21 +97,18 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 client.on('messageCreate', async (message) => {
-    if (message.content.startsWith('!')) return;
-
-    if (!message.author.bot) {
-        if (message.content.startsWith('<@1078379206926405802>')) {
+    if (
+        !message.author.bot &&
+        message.content.startsWith('<@1078379206926405802>')
+    ) {
+        try {
             let conversationLog = [
                 { role: 'system', content: 'You are a rat named Ratimir.' },
             ];
-    
-            await message.channel.sendTyping();
-    
             let prevMessages = await message.channel.messages.fetch({
-                limit: 10,
+                limit: 5,
             });
             prevMessages.reverse();
-    
             prevMessages.forEach((msg) => {
                 if (msg.author.id === '1078379206926405802') {
                     conversationLog.push({
@@ -116,30 +116,32 @@ client.on('messageCreate', async (message) => {
                         content: msg.content,
                     });
                 } else if (msg.content.startsWith('<@1078379206926405802>')) {
-                    msg.content = msg.content.replace('<@1078379206926405802>', '');
+                    msg.content = msg.content.replace(
+                        '<@1078379206926405802>',
+                        ''
+                    );
                     conversationLog.push({
                         role: 'user',
                         content: msg.content,
                     });
                 }
-                console.log(msg.content);
-                console.log(conversationLog);
             });
-            try {
-                const result = await openai.createChatCompletion({
-                    model: 'gpt-3.5-turbo',
-                    messages: conversationLog,
-                });
-                const messageArray = checkMessage(result.data.choices[0].message.content);
-                for (let i = 0; i < messageArray.length; i++) {
-                    message.channel.send(messageArray[i]);
-                }
-            } catch (error) {
-                console.log(error);
-                message.channel.send(
-                    'Ratimir is experiencing some issues right now. Try again later.'
-                );
+            await message.channel.sendTyping();
+            const result = await openai.createChatCompletion({
+                model: 'gpt-3.5-turbo',
+                messages: conversationLog,
+            });
+            const messageArray = checkMessage(
+                result.data.choices[0].message.content
+            );
+            for (let i = 0; i < messageArray.length; i++) {
+                message.channel.send(messageArray[i]);
             }
+        } catch (error) {
+            console.log(error);
+            message.channel.send(
+                'Ratimir is experiencing some issues right now. Try again later.'
+            );
         }
     }
 });
