@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { Configuration, OpenAIApi } = require('openai');
-const { token } = require('./config.json');
+const { token, unreleasetoken } = require('./config.json');
 require('dotenv').config();
 
 const client = new Client({
@@ -96,11 +96,21 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
+let timeout = [];
+
 client.on('messageCreate', async (message) => {
     if (
         !message.author.bot &&
         message.content.startsWith('<@1078379206926405802>')
     ) {
+        if (timeout.includes(message.author.id))
+            return await message.channel.send(
+                `<@${message.author.id}> Slow down Ratimir cannot respond that quickly! Try again in 5 seconds.`
+            );
+        timeout.push(message.author.id);
+        setTimeout(() => {
+            timeout.shift();
+        }, 5000);
         try {
             let conversationLog = [
                 { role: 'system', content: 'You are a rat named Ratimir.' },
