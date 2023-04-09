@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { Configuration, OpenAIApi } = require('openai');
-const { token, unreleasetoken } = require('./config.json');
+const { token, ratimirv2 } = require('./config.json');
 require('dotenv').config();
 
 const client = new Client({
@@ -101,7 +101,7 @@ let timeout = [];
 client.on('messageCreate', async (message) => {
     if (
         !message.author.bot &&
-        message.content.startsWith('<@1078379206926405802>')
+        message.content.startsWith('<@1092544148470497363>')
     ) {
         if (timeout.includes(message.author.id))
             return await message.channel.send(
@@ -120,14 +120,14 @@ client.on('messageCreate', async (message) => {
             });
             prevMessages.reverse();
             prevMessages.forEach((msg) => {
-                if (msg.author.id === '1078379206926405802') {
+                if (msg.author.id === '1092544148470497363') {
                     conversationLog.push({
                         role: 'assistant',
                         content: msg.content,
                     });
-                } else if (msg.content.startsWith('<@1078379206926405802>')) {
+                } else if (msg.content.startsWith('<@1092544148470497363>')) {
                     msg.content = msg.content.replace(
-                        '<@1078379206926405802>',
+                        '<@1092544148470497363>',
                         ''
                     );
                     conversationLog.push({
@@ -156,4 +156,4 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-client.login(token);
+client.login(ratimirv2);
