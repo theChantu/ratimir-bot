@@ -1,9 +1,11 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const { Configuration, OpenAIApi } = require('openai');
-const { token, unreleasetoken } = require('./config.json');
-require('dotenv').config();
+const fs = require("node:fs");
+const path = require("node:path");
+const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
+const { token, googleapikey } = require("./config.json");
+const { TextServiceClient } = require("@google-ai/generativelanguage").v1beta2;
+const { GoogleAuth } = require("google-auth-library");
+const { DiscussServiceClient } = require("@google-ai/generativelanguage");
+const MODEL_NAME = "models/chat-bison-001";
 
 const client = new Client({
     intents: [
@@ -14,18 +16,18 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-const foldersPath = path.join(__dirname, 'commands');
+const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs
         .readdirSync(commandsPath)
-        .filter((file) => file.endsWith('.js'));
+        .filter((file) => file.endsWith(".js"));
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
+        if ("data" in command && "execute" in command) {
             client.commands.set(command.data.name, command);
         } else {
             console.log(
@@ -71,87 +73,86 @@ client.on(Events.InteractionCreate, async (interaction) => {
         console.error(error);
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({
-                content: 'There was an error while executing this command!',
+                content: "There was an error while executing this command!",
                 ephemeral: true,
             });
         } else {
             await interaction.reply({
-                content: 'There was an error while executing this command!',
+                content: "There was an error while executing this command!",
                 ephemeral: true,
             });
         }
     }
 });
 
-client.once('ready', async (c) => {
+client.once("ready", async (c) => {
     console.log(`${c.user.tag} is online.`);
 
     c.user.setPresence({
-        activities: [{ name: '/ratimir' }],
+        activities: [{ name: "/ratimir" }],
     });
 });
 
-const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
+const googleClient = new DiscussServiceClient({
+    authClient: new GoogleAuth().fromAPIKey(googleapikey),
 });
-const openai = new OpenAIApi(configuration);
 
-let timeout = [];
+// let canRequest = true;
+// let requestAmount = 30;
+// let timeoutActive = false;
+// const timeout = 60 * 30 * 1000;
 
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
     if (
         !message.author.bot &&
-        message.content.startsWith('<@1078379206926405802>')
+        message.content.startsWith("<@1078379206926405802>")
     ) {
-        if (timeout.includes(message.author.id))
-            return await message.channel.send(
-                `<@${message.author.id}> Slow down Ratimir cannot respond that quickly! Try again in 5 seconds.`
-            );
-        timeout.push(message.author.id);
-        setTimeout(() => {
-            timeout.shift();
-        }, 5000);
+        // if (requestAmount >= 30) {
+        //     if (timeoutActive === false) {
+        //         setTimeout(() => {
+        //             requestAmount = 0;
+        //         }, timeout);
+        //         timeoutActive = true;
+        //     }
+        //     message.channel.send("To many requests in 30 minutes.");
+        //     return;
+        // }
+
         try {
-            let conversationLog = [
-                { role: 'system', content: 'You are a rat named Ratimir.' },
-            ];
+            let messages = [];
             let prevMessages = await message.channel.messages.fetch({
                 limit: 5,
             });
             prevMessages.reverse();
             prevMessages.forEach((msg) => {
-                if (msg.author.id === '1078379206926405802') {
-                    conversationLog.push({
-                        role: 'assistant',
-                        content: msg.content,
-                    });
-                } else if (msg.content.startsWith('<@1078379206926405802>')) {
-                    msg.content = msg.content.replace(
-                        '<@1078379206926405802>',
-                        ''
-                    );
-                    conversationLog.push({
-                        role: 'user',
-                        content: msg.content,
+                if (msg.author.id === "1078379206926405802") {
+                    messages.push({ content: `(AI) ${msg.content}` });
+                } else {
+                    messages.push({
+                        content: `(USER) ${msg.content}`,
                     });
                 }
             });
-            await message.channel.sendTyping();
-            const result = await openai.createChatCompletion({
-                model: 'gpt-3.5-turbo',
-                messages: conversationLog,
+            console.log(messages);
+
+            const result = await googleClient.generateMessage({
+                model: MODEL_NAME,
+                temperature: 0.2,
+                candidateCount: 1,
+                prompt: {
+                    // context: "You are a rat named Ratimir.",
+                    messages: messages,
+                    disable_filters: true,
+                },
             });
-            const messageArray = checkMessage(
-                result.data.choices[0].message.content
-            );
-            for (let i = 0; i < messageArray.length; i++) {
-                message.channel.send(messageArray[i]);
-            }
+
+            const messageArray = checkMessage(result[0].candidates[0].content);
+            messageArray.forEach((msg) => {
+                message.channel.send(msg);
+            });
         } catch (error) {
             console.log(error);
-            message.channel.send(
-                'Ratimir is experiencing some issues right now. Try again later.'
-            );
+            message.channel.send("Ratimerror ⚠️");
         }
     }
 });
