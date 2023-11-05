@@ -157,4 +157,30 @@ client.on("messageCreate", async (message) => {
     }
 });
 
+const COOLMESSAGES = [
+    "It's not. 💀",
+    "No.",
+    "Maybe? 🤔",
+    "Nope.",
+    "I don't know.",
+    "Yes.",
+    "I guess.",
+    "I don't think so.",
+    "I think so.",
+    "It is.",
+];
+// OPTIMIZATION????????????????
+const COOLMESSAGESLENGTH = COOLMESSAGES.length;
+
+client.on("messageCreate", async (message) => {
+    if (
+        !message.author.bot &&
+        message.content.toLowerCase().startsWith("is ")
+    ) {
+        message.channel.send(
+            COOLMESSAGES[Math.floor(Math.random() * COOLMESSAGESLENGTH)]
+        );
+    }
+});
+
 client.login(token);
