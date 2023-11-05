@@ -16,6 +16,8 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+client.cooldowns = new Collection();
+
 const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -27,6 +29,7 @@ for (const folder of commandFolders) {
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
+        // Set a new item in the Collection with the key as the command name and the value as the exported module
         if ("data" in command && "execute" in command) {
             client.commands.set(command.data.name, command);
         } else {
@@ -60,30 +63,35 @@ function checkMessage(message, array = []) {
     return array;
 }
 
-// client.on(Events.InteractionCreate, async (interaction) => {
-//     if (!interaction.isChatInputCommand()) return;
+client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
 
-//     const command = client.commands.get(interaction.commandName);
+    const command = interaction.client.commands.get(interaction.commandName);
 
-//     if (!command) return;
+    if (!command) {
+        console.error(
+            `No command matching ${interaction.commandName} was found.`
+        );
+        return;
+    }
 
-//     try {
-//         await command.execute(interaction);
-//     } catch (error) {
-//         console.error(error);
-//         if (interaction.replied || interaction.deferred) {
-//             await interaction.followUp({
-//                 content: "There was an error while executing this command!",
-//                 ephemeral: true,
-//             });
-//         } else {
-//             await interaction.reply({
-//                 content: "There was an error while executing this command!",
-//                 ephemeral: true,
-//             });
-//         }
-//     }
-// });
+    try {
+        await command.execute(interaction);
+    } catch (error) {
+        console.error(error);
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({
+                content: "There was an error while executing this command!",
+                ephemeral: true,
+            });
+        } else {
+            await interaction.reply({
+                content: "There was an error while executing this command!",
+                ephemeral: true,
+            });
+        }
+    }
+});
 
 client.once("ready", async (c) => {
     console.log(`${c.user.tag} is online.`);
@@ -102,7 +110,11 @@ const googleClient = new DiscussServiceClient({
 // let timeoutActive = false;
 // const timeout = 60 * 30 * 1000;
 
+const timeouts = [];
+
 client.on("messageCreate", async (message) => {
+    if (timeouts.includes(message.author.id)) return;
+
     if (
         !message.author.bot &&
         message.content.startsWith("<@1078379206926405802>")
@@ -119,6 +131,8 @@ client.on("messageCreate", async (message) => {
         // }
 
         try {
+            await message.channel.sendTyping();
+
             let messages = [];
             let prevMessages = await message.channel.messages.fetch({
                 limit: 5,
@@ -150,6 +164,12 @@ client.on("messageCreate", async (message) => {
             messageArray.forEach((msg) => {
                 message.channel.send(msg);
             });
+
+            timeouts.push(message.author.id);
+
+            setTimeout(() => {
+                timeouts.splice(timeouts.indexOf(message.author.id), 1);
+            }, 6000);
         } catch (error) {
             console.log(error);
             message.channel.send("Ratimerror ⚠️");
