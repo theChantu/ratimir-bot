@@ -105,11 +105,6 @@ const googleClient = new DiscussServiceClient({
     authClient: new GoogleAuth().fromAPIKey(googleapikey),
 });
 
-// let canRequest = true;
-// let requestAmount = 30;
-// let timeoutActive = false;
-// const timeout = 60 * 30 * 1000;
-
 const timeouts = [];
 
 client.on("messageCreate", async (message) => {
@@ -119,16 +114,8 @@ client.on("messageCreate", async (message) => {
         !message.author.bot &&
         message.content.startsWith("<@1078379206926405802>")
     ) {
-        // if (requestAmount >= 30) {
-        //     if (timeoutActive === false) {
-        //         setTimeout(() => {
-        //             requestAmount = 0;
-        //         }, timeout);
-        //         timeoutActive = true;
-        //     }
-        //     message.channel.send("To many requests in 30 minutes.");
-        //     return;
-        // }
+        // First add the user to the timeout array.
+        timeouts.push(message.author.id);
 
         try {
             await message.channel.sendTyping();
@@ -140,10 +127,10 @@ client.on("messageCreate", async (message) => {
             prevMessages.reverse();
             prevMessages.forEach((msg) => {
                 if (msg.author.id === "1078379206926405802") {
-                    messages.push({ content: `(AI) ${msg.content}` });
+                    messages.push({ content: `${msg.content}` });
                 } else {
                     messages.push({
-                        content: `(USER) ${msg.content}`,
+                        content: `${msg.content}`,
                     });
                 }
             });
@@ -154,25 +141,28 @@ client.on("messageCreate", async (message) => {
                 temperature: 0.2,
                 candidateCount: 1,
                 prompt: {
-                    // context: "You are a rat named Ratimir.",
                     messages: messages,
                     disable_filters: true,
                 },
             });
+
+            // If the message contains a bad word, the API will return a filter.
+            if (result[0].filters.length > 0) {
+                message.channel.send("I do not like bad words! 🤬");
+                return;
+            }
 
             const messageArray = checkMessage(result[0].candidates[0].content);
             messageArray.forEach((msg) => {
                 message.channel.send(msg);
             });
 
-            timeouts.push(message.author.id);
-
             setTimeout(() => {
                 timeouts.splice(timeouts.indexOf(message.author.id), 1);
             }, 6000);
         } catch (error) {
             console.log(error);
-            message.channel.send("Ratimerror ⚠️");
+            message.channel.send("A Ratimerror has occured. 🐀");
         }
     }
 });
