@@ -141,6 +141,7 @@ client.on("messageCreate", async (message) => {
                 temperature: 0.2,
                 candidateCount: 1,
                 prompt: {
+                    context: "You are an aggressive rat named Ratimir.",
                     messages: messages,
                     disable_filters: true,
                 },
@@ -148,7 +149,13 @@ client.on("messageCreate", async (message) => {
 
             // If the message contains a bad word, the API will return a filter.
             if (result[0].filters.length > 0) {
-                message.channel.send("I do not like bad words! 🤬");
+                console.log(result[0].filters);
+                message.channel.send(
+                    "Whatever you said triggered a content filter. 🤨"
+                );
+                setTimeout(() => {
+                    timeouts.splice(timeouts.indexOf(message.author.id), 1);
+                }, 6000);
                 return;
             }
 
@@ -163,6 +170,10 @@ client.on("messageCreate", async (message) => {
         } catch (error) {
             console.log(error);
             message.channel.send("A Ratimerror has occured. 🐀");
+            // Remove the user from the timeout array even when error occurs.
+            setTimeout(() => {
+                timeouts.splice(timeouts.indexOf(message.author.id), 1);
+            }, 6000);
         }
     }
 });
