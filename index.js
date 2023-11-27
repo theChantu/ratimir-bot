@@ -1,11 +1,14 @@
 const fs = require("node:fs");
 const path = require("node:path");
+require("dotenv").config();
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
-const { token, googleapikey } = require("./config.json");
-const { TextServiceClient } = require("@google-ai/generativelanguage").v1beta2;
 const { GoogleAuth } = require("google-auth-library");
 const { DiscussServiceClient } = require("@google-ai/generativelanguage");
 const MODEL_NAME = "models/chat-bison-001";
+
+const TOKEN = process.env.TOKEN;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const CLIENT_ID = process.env.CLIENT_ID;
 
 const client = new Client({
     intents: [
@@ -16,7 +19,6 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-client.cooldowns = new Collection();
 
 const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
@@ -102,7 +104,7 @@ client.once("ready", async (c) => {
 });
 
 const googleClient = new DiscussServiceClient({
-    authClient: new GoogleAuth().fromAPIKey(googleapikey),
+    authClient: new GoogleAuth().fromAPIKey(GOOGLE_API_KEY),
 });
 
 const timeouts = [];
@@ -110,10 +112,7 @@ const timeouts = [];
 client.on("messageCreate", async (message) => {
     if (timeouts.includes(message.author.id)) return;
 
-    if (
-        !message.author.bot &&
-        message.content.startsWith("<@1078379206926405802>")
-    ) {
+    if (!message.author.bot && message.content.startsWith(`<@${CLIENT_ID}>`)) {
         // First add the user to the timeout array.
         timeouts.push(message.author.id);
 
@@ -126,7 +125,7 @@ client.on("messageCreate", async (message) => {
             });
             prevMessages.reverse();
             prevMessages.forEach((msg) => {
-                if (msg.author.id === "1078379206926405802") {
+                if (msg.author.id === CLIENT_ID) {
                     messages.push({ content: `${msg.content}` });
                 } else {
                     messages.push({
@@ -189,8 +188,8 @@ const COOLMESSAGES = [
     "I don't think so.",
     "I think so.",
     "It is.",
+    "💀",
 ];
-// OPTIMIZATION????????????????
 const COOLMESSAGESLENGTH = COOLMESSAGES.length;
 
 client.on("messageCreate", async (message) => {
@@ -198,10 +197,17 @@ client.on("messageCreate", async (message) => {
         !message.author.bot &&
         message.content.toLowerCase().startsWith("is ")
     ) {
-        message.channel.send(
-            COOLMESSAGES[Math.floor(Math.random() * COOLMESSAGESLENGTH)]
-        );
+        // Small chance of sending a cool message.
+        const RANDOMNUMBER = Math.floor(Math.random() * 10);
+        if (RANDOMNUMBER > 7) {
+            await message.channel.sendTyping();
+            setTimeout(() => {
+                message.channel.send(
+                    COOLMESSAGES[Math.floor(Math.random() * COOLMESSAGESLENGTH)]
+                );
+            }, 2000);
+        }
     }
 });
 
-client.login(token);
+client.login(TOKEN);
