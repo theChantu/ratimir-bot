@@ -127,7 +127,7 @@ client.on("messageCreate", async (message) => {
             prevMessages.forEach((msg) => {
                 if (msg.author.id === CLIENT_ID) {
                     messages.push({ content: `${msg.content}` });
-                } else {
+                } else if (msg.content.startsWith(`<@${CLIENT_ID}>`)) {
                     messages.push({
                         content: `${msg.content}`,
                     });
