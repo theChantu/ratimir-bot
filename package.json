@@ -18,16 +18,16 @@
     },
     "homepage": "https://github.com/MrChantu/ratimir-bot#readme",
     "dependencies": {
-        "@google-ai/generativelanguage": "^0.2.0",
-        "discord.js": "^14.7.1",
-        "fs": "^0.0.1-security",
-        "google-auth-library": "^8.8.0",
+        "@google-ai/generativelanguage": "^0.2.1",
+        "discord.js": "^14.14.1",
+        "fs": "0.0.1-security",
+        "google-auth-library": "^8.9.0",
         "path": "^0.12.7"
     },
     "devDependencies": {
-        "dotenv": "^16.3.1",
-        "eslint": "^8.35.0",
+        "dotenv": "^16.4.1",
+        "eslint": "^8.56.0",
         "eslint-config-airbnb-base": "^15.0.0",
-        "eslint-plugin-import": "^2.27.5"
+        "eslint-plugin-import": "^2.29.1"
     }
 }
