@@ -16,6 +16,19 @@ const BALLS_BE_GONE = [
     "pulverized",
     "extinguished",
     "exterminated",
+    "eliminated",
+    "erased",
+    "removed",
+    "deleted",
+    "terminated",
+    "smothered",
+    "suffocated",
+    "strangled",
+    "squeezed",
+    "choked",
+    "gripped",
+    "drowned",
+    "sunk",
 ];
 
 module.exports = {
@@ -40,7 +53,7 @@ module.exports = {
         }
 
         await interaction.reply({
-            content: `${user} Your balls have been ${BALLS_BE_GONE[randomIndex]} by ${interaction.user}! ⚽`,
+            content: `${user} Your balls have been ${BALLS_BE_GONE[randomIndex]} by ${interaction.user}! 🔨😭`,
         });
     },
 };
