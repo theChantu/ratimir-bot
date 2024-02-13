@@ -2,9 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("dotenv").config();
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
-const { GoogleAuth } = require("google-auth-library");
-const { DiscussServiceClient } = require("@google-ai/generativelanguage");
-const MODEL_NAME = "models/chat-bison-001";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const TOKEN = process.env.TOKEN;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -103,9 +101,8 @@ client.once("ready", async (c) => {
     });
 });
 
-const googleClient = new DiscussServiceClient({
-    authClient: new GoogleAuth().fromAPIKey(GOOGLE_API_KEY),
-});
+const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 const timeouts = [];
 
@@ -124,88 +121,53 @@ client.on("messageCreate", async (message) => {
                 limit: 5,
             });
             prevMessages.reverse();
+            let current = "user";
             prevMessages.forEach((msg) => {
                 if (msg.author.id === CLIENT_ID) {
-                    messages.push({ content: `${msg.content}` });
+                    if (current === "model") {
+                        messages.push({
+                            role: "model",
+                            parts: `${msg.content}`,
+                        });
+                        current = "user";
+                    }
                 } else if (msg.content.startsWith(`<@${CLIENT_ID}>`)) {
-                    messages.push({
-                        content: `${msg.content}`,
-                    });
+                    if (current === "user") {
+                        const revisedMsg = `${msg.content.replace(
+                            `<@${CLIENT_ID}>`,
+                            ""
+                        )}`.trim();
+
+                        messages.push({
+                            role: "user",
+                            parts: revisedMsg,
+                        });
+                        current = "model";
+                    }
                 }
             });
-            console.log(messages);
 
-            const result = await googleClient.generateMessage({
-                model: MODEL_NAME,
-                temperature: 0.2,
-                candidateCount: 1,
-                prompt: {
-                    context: "You are an aggressive rat named Ratimir.",
-                    messages: messages,
-                    disable_filters: true,
-                },
-            });
+            // This is the newest user message and will be used to start a chat with the history of messages.
+            const msg = messages.pop();
 
-            // If the message contains a bad word, the API will return a filter.
-            if (result[0].filters.length > 0) {
-                console.log(result[0].filters);
-                message.channel.send(
-                    "Whatever you said triggered a content filter. 🤨"
-                );
-                setTimeout(() => {
-                    timeouts.splice(timeouts.indexOf(message.author.id), 1);
-                }, 6000);
-                return;
-            }
+            const chat = model.startChat({ history: messages });
 
-            const messageArray = checkMessage(result[0].candidates[0].content);
+            const result = await chat.sendMessage(msg.parts);
+
+            const messageArray = checkMessage(result.response.text());
             messageArray.forEach((msg) => {
                 message.channel.send(msg);
             });
-
-            setTimeout(() => {
-                timeouts.splice(timeouts.indexOf(message.author.id), 1);
-            }, 6000);
         } catch (error) {
             console.log(error);
-            message.channel.send("A Ratimerror has occured. 🐀");
+            message.channel.send(
+                "Whatever you said triggered a content filter. 🤨"
+            );
+        } finally {
             // Remove the user from the timeout array even when error occurs.
             setTimeout(() => {
                 timeouts.splice(timeouts.indexOf(message.author.id), 1);
             }, 6000);
-        }
-    }
-});
-
-const COOLMESSAGES = [
-    "It's not. 💀",
-    "No.",
-    "Maybe? 🤔",
-    "Nope.",
-    "I don't know.",
-    "Yes.",
-    "I guess.",
-    "I don't think so.",
-    "I think so.",
-    "It is.",
-    "💀",
-];
-const COOLMESSAGESLENGTH = COOLMESSAGES.length;
-
-client.on("messageCreate", async (message) => {
-    if (
-        !message.author.bot &&
-        message.content.toLowerCase().startsWith("is ")
-    ) {
-        // Small chance of sending a cool message.
-        const RANDOMNUMBER = Math.floor(Math.random() * 10);
-        if (RANDOMNUMBER > 7) {
-            await message.channel.sendTyping();
-            setTimeout(() => {
-                message.channel.send(
-                    COOLMESSAGES[Math.floor(Math.random() * COOLMESSAGESLENGTH)]
-                );
-            }, 2000);
         }
     }
 });

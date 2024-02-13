@@ -50,24 +50,26 @@ module.exports = {
 
         const randomIndex = Math.floor(Math.random() * BALLS_BE_GONE.length);
 
-        if (randomNum === 0) {
-            return await interaction.reply({
+        interaction.deferReply();
+
+        if (randomNum === 0 && user.id !== interaction.user.id) {
+            await interaction.channel.send({
                 content: `${user} your balls were going to be ${BALLS_BE_GONE[randomIndex]}, but you got lucky and ${interaction.user}'s balls have been ${BALLS_BE_GONE[randomIndex]} instead! 🥳`,
             });
-        }
-
-        if (user.id === interaction.user.id) {
-            return await interaction.reply({
+        } else if (user.id === interaction.user.id) {
+            await interaction.channel.send({
                 content: `${user} ${
                     BALLS_BE_GONE[randomIndex]
                 } their own balls! ${randomEmoji()}`,
             });
+        } else {
+            await interaction.channel.send({
+                content: `${user} your balls have been ${
+                    BALLS_BE_GONE[randomIndex]
+                } by ${interaction.user}! ${randomEmoji()}`,
+            });
         }
 
-        await interaction.reply({
-            content: `${user} your balls have been ${
-                BALLS_BE_GONE[randomIndex]
-            } by ${interaction.user}! ${randomEmoji()}`,
-        });
+        interaction.deleteReply();
     },
 };
