@@ -2,7 +2,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("dotenv").config();
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const {
+    GoogleGenerativeAI,
+    HarmCategory,
+    HarmBlockThreshold,
+} = require("@google/generative-ai");
 
 const TOKEN = process.env.TOKEN;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -104,6 +108,25 @@ client.once("ready", async (c) => {
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
+const safetySettings = [
+    {
+        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+];
+
 const timeouts = [];
 
 client.on("messageCreate", async (message) => {
@@ -150,7 +173,7 @@ client.on("messageCreate", async (message) => {
             // This is the newest user message and will be used to start a chat with the history of messages.
             const msg = messages.pop();
 
-            const chat = model.startChat({ history: messages });
+            const chat = model.startChat({ history: messages, safetySettings });
 
             const result = await chat.sendMessage(msg.parts);
 
