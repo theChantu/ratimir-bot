@@ -6,6 +6,7 @@ const {
     GoogleGenerativeAI,
     HarmCategory,
     HarmBlockThreshold,
+    GoogleGenerativeAIResponseError,
 } = require("@google/generative-ai");
 
 const TOKEN = process.env.TOKEN;
@@ -105,9 +106,6 @@ client.once("ready", async (c) => {
     });
 });
 
-const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
 const safetySettings = [
     {
         category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -126,6 +124,13 @@ const safetySettings = [
         threshold: HarmBlockThreshold.BLOCK_NONE,
     },
 ];
+
+const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-pro-latest",
+    safetySettings,
+    systemInstruction: "You are a serious and angry rat. Your name is Ratimir.",
+});
 
 const timeouts = [];
 
@@ -150,7 +155,7 @@ client.on("messageCreate", async (message) => {
                     if (current === "model") {
                         messages.push({
                             role: "model",
-                            parts: `${msg.content}`,
+                            parts: [{ text: `${msg.content}` }],
                         });
                         current = "user";
                     }
@@ -163,7 +168,7 @@ client.on("messageCreate", async (message) => {
 
                         messages.push({
                             role: "user",
-                            parts: revisedMsg,
+                            parts: [{ text: revisedMsg }],
                         });
                         current = "model";
                     }
@@ -173,7 +178,7 @@ client.on("messageCreate", async (message) => {
             // This is the newest user message and will be used to start a chat with the history of messages.
             const msg = messages.pop();
 
-            const chat = model.startChat({ history: messages, safetySettings });
+            const chat = model.startChat({ history: messages });
 
             const result = await chat.sendMessage(msg.parts);
 
@@ -183,11 +188,17 @@ client.on("messageCreate", async (message) => {
             });
         } catch (error) {
             console.log(error);
-            message.channel.send(
-                "Whatever you said triggered a content filter. 🤨"
-            );
+            if (error instanceof GoogleGenerativeAIResponseError) {
+                message.channel.send(
+                    "Whatever you said triggered a content filter. 🤨📸"
+                );
+            } else {
+                message.channel.send(
+                    "Ratimir has been kidnapped. Please try again later. 🐀"
+                );
+            }
         } finally {
-            // Remove the user from the timeout array even when error occurs.
+            // Remove the user from the timeout array.
             setTimeout(() => {
                 timeouts.splice(timeouts.indexOf(message.author.id), 1);
             }, 6000);
