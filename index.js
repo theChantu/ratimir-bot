@@ -148,7 +148,7 @@ client.on("messageCreate", async (message) => {
 
             let messages = [];
             let prevMessages = await message.channel.messages.fetch({
-                limit: 10,
+                limit: 5,
             });
             prevMessages.reverse();
             let current = "user";
