@@ -7,6 +7,7 @@ const {
     HarmCategory,
     HarmBlockThreshold,
     GoogleGenerativeAIResponseError,
+    GoogleGenerativeAIFetchError,
 } = require("@google/generative-ai");
 
 const TOKEN = process.env.TOKEN;
@@ -129,7 +130,8 @@ const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({
     model: "gemini-1.5-pro-latest",
     safetySettings,
-    systemInstruction: "You are a serious and angry rat. Your name is Ratimir.",
+    systemInstruction:
+        "You are a serious, sassy, and angry rat. Your name is Ratimir.",
 });
 
 const timeouts = [];
@@ -146,7 +148,7 @@ client.on("messageCreate", async (message) => {
 
             let messages = [];
             let prevMessages = await message.channel.messages.fetch({
-                limit: 5,
+                limit: 10,
             });
             prevMessages.reverse();
             let current = "user";
@@ -191,6 +193,10 @@ client.on("messageCreate", async (message) => {
             if (error instanceof GoogleGenerativeAIResponseError) {
                 message.channel.send(
                     "Whatever you said triggered a content filter. 🤨📸"
+                );
+            } else if (error instanceof GoogleGenerativeAIFetchError) {
+                message.channel.send(
+                    "Ratimir is getting too many requests. Try again in 1 minute."
                 );
             } else {
                 message.channel.send(
