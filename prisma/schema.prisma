@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Server {
+  guildId    String @unique
+  ratSpawned Boolean @default(false)
+  timeSinceLastSpawn Int @default(0)
+}

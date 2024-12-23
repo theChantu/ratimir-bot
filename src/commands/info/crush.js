@@ -1,4 +1,4 @@
-const { randomEmoji } = require("../../tools");
+const { randomEmoji } = require("../../utils/randomEmoji");
 
 const { SlashCommandBuilder } = require("discord.js");
 
