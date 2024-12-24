@@ -19,3 +19,11 @@ model RatMessage {
   channelId String
   messageId String @unique
 }
+
+model RatCount {
+  userId String
+  ratType String
+  count Int
+
+  @@unique([userId, ratType])
+}

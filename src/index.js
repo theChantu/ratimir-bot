@@ -223,6 +223,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 log(interaction.user.id, `caught a ${interaction.customId}!`);
                 await interaction.message.delete();
                 await db.updateRatSpawned(guildId, false);
+                await db.claimRat(interaction.user.id, interaction.customId);
             }
         } catch (error) {
             log(error);

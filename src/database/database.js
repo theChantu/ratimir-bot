@@ -128,6 +128,62 @@ class Database {
             log(error);
         }
     }
+
+    /** @param {string} userId @param {string} ratType  */
+    async claimRat(userId, ratType) {
+        try {
+            const user = await this.prisma.ratCount.findFirst({
+                where: {
+                    userId: userId,
+                    AND: {
+                        ratType: ratType,
+                    },
+                },
+            });
+
+            // No user found for this rat type
+            if (user === null) {
+                await this.prisma.ratCount.create({
+                    data: {
+                        userId: userId,
+                        ratType: ratType,
+                        count: 1,
+                    },
+                });
+                // Update users rat count for this rat type
+            } else {
+                const prevCount = user.count;
+                await this.prisma.ratCount.update({
+                    where: {
+                        userId_ratType: {
+                            userId: userId,
+                            ratType: ratType,
+                        },
+                    },
+                    data: {
+                        count: prevCount + 1,
+                    },
+                });
+            }
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} userId  */
+    async fetchUsersRats(userId) {
+        try {
+            const user = await this.prisma.ratCount.findMany({
+                where: {
+                    userId: userId,
+                },
+            });
+
+            return user;
+        } catch (error) {
+            log(error);
+        }
+    }
 }
 
 const db = new Database();

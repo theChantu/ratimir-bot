@@ -1,4 +1,4 @@
-const { Message } = require("discord.js");
+const { Message, EmbedBuilder } = require("discord.js");
 const { log } = require("../utils/log");
 const { db } = require("../database/database");
 const {
@@ -6,8 +6,8 @@ const {
     DELETE_MESSAGE_TIME,
 } = require("../config/globals");
 
-/** @param {Message} message  */
-function addRatMessageInterval(message, rat) {
+/** @param {Message} message @param {EmbedData} embed   */
+function addRatMessageInterval(message, rat, embed) {
     // Store in case this shit gets deleted some time after interval runs
     const { guildId, id } = message;
 
@@ -44,10 +44,21 @@ function addRatMessageInterval(message, rat) {
                 timeSinceLastRatSpawn + DELETE_MESSAGE_TIME - Date.now();
             log("timeUntilDestruction:", timeUntilDestruction / 1000 / 60);
 
+            const embed = new EmbedBuilder();
+
+            embed
+                .setTitle(ratName.toUpperCase())
+                .setDescription("Holy mother of god.")
+                .setColor("Random")
+                .setImage(`attachment://${ratImg}`)
+                .setFields({
+                    name: "Time until destruction:",
+                    value: `💣 ${timeUntilDestruction / 1000 / 60} minute(s)`,
+                    inline: true,
+                });
+
             await message.edit({
-                content: `A ${ratName}! This message will self destruct in ${Math.floor(
-                    timeUntilDestruction / 1000 / 60
-                )} minutes.`,
+                embeds: [embed],
             });
         } catch (error) {
             if (error.code === 10008) {
