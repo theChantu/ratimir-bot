@@ -18,15 +18,11 @@ const {
     ChannelType,
 } = require("discord.js");
 const { getRandomRat } = require("./utils/getRandomRat.js");
-const {
-    createDatabase,
-    updateServer,
-    getRatSpawned,
-    resetRatSpawned,
-} = require("./database/database.js");
+const { db } = require("./database/database.js");
 const stateManager = require("./utils/StateManager.js");
 const { spawnRat } = require("./tasks/spawnRat.js");
 const { log } = require("./utils/log.js");
+const { deleteRatMessages } = require("./utils/deleteRatMessages.js");
 
 const TOKEN = process.env.TOKEN;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -119,30 +115,22 @@ const INTERVAL_RATE = 15000;
 // TODO: Set back to 200000000 (2 ish days)
 const RAT_SPAWN_RATE = 15000;
 const timeouts = [];
-// let timeSinceLastRatSpawn = null;
 
 client.once("ready", async (client) => {
     // Setup the database
+    // This will happen at the top of this file (not in this callback function)
     // FIXME: createDatabase not creating the database. Furthermore, the table is also not being created.
-    // if (!fs.existsSync("./database.db")) {
-    //     log("Creating database...");
-    //     createDatabase();
-    // }
-    // TODO: Add a channel table to the database
-    // TODO: Change this to checking database for channel and message id, delete the message if it exists
-    await resetRatSpawned();
-    // TODO: Pull from database ratSpawned
 
-    // let ratClaimed = false;
+    // Reset all servers to ratSpawned = false
+    await db.resetRatSpawned();
+    // Delete any rat messages that are left behind
+    await deleteRatMessages(client);
 
     log(`${client.user.tag} is online.`);
 
     client.user.setPresence({
         activities: [{ name: "/ratimir" }],
     });
-
-    // TODO: search database for servers where ratSpawned is true
-    // Delete all of the rat messages using the messageId (that will be stored)
 
     async function intervalFunction() {
         log("Ready interval running...");
@@ -169,7 +157,7 @@ client.once("ready", async (client) => {
             }, []);
             for (const { guildId, channels } of sortedGuildsTCs) {
                 // Don't spawn rat for this guild if one is already spawned
-                const ratSpawned = await getRatSpawned(guildId);
+                const ratSpawned = await db.getRatSpawned(guildId);
                 if (ratSpawned) continue;
                 // Find best channel based on the date of the last message sent
                 let bestChannel = null;
@@ -199,7 +187,7 @@ client.once("ready", async (client) => {
                         }
                     } catch (error) {
                         if (error.code === 10008) {
-                            log("Message not found.");
+                            log("index: Message not found.");
                         } else {
                             log(error);
                         }
@@ -229,12 +217,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
         try {
             const guildId = interaction.guildId;
             // Prevent multiple users from catching the same rat
-            const ratSpawned = await getRatSpawned(guildId);
+            const ratSpawned = await db.getRatSpawned(guildId);
             if (ratSpawned) {
                 console.log(interaction.guildId);
                 log(interaction.user.id, `caught a ${interaction.customId}!`);
                 await interaction.message.delete();
-                await updateServer(guildId, Number(false));
+                await db.updateRatSpawned(guildId, false);
             }
         } catch (error) {
             log(error);
@@ -274,7 +262,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on("guildCreate", (guild) => {
     log(`Ratimir has joined ${guild.name}`);
-    setupServer(guild.id);
+    db.setupServer(guild.id);
 });
 
 client.on("messageCreate", async (message) => {

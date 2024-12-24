@@ -11,5 +11,11 @@ datasource db {
 model Server {
   guildId    String @unique
   ratSpawned Boolean @default(false)
-  timeSinceLastSpawn Int @default(0)
+  timeSinceLastSpawn String @default("0")
+}
+
+model RatMessage {
+  guildId String
+  channelId String
+  messageId String @unique
 }

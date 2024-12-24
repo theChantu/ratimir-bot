@@ -1,147 +1,137 @@
-const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
-
-const DB_PATH = path.resolve(__dirname, "database.sqlite");
+const { PrismaClient } = require("@prisma/client");
+const { log } = require("../utils/log");
 
 // Testing things
 class Database {
     constructor() {
-        this.db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READWRITE);
+        this.prisma = new PrismaClient();
     }
 
-    doSomething() {
-        this.db.run("SQL INSTRUCTION");
+    /** @param {string} guildId  */
+    async setupServer(guildId) {
+        try {
+            const guild = await this.prisma.server.findUnique({
+                where: {
+                    guildId: guildId,
+                },
+            });
+            log("foundGuild:", guild);
+            // Only add if it doesn't exist
+            if (guild === null) {
+                await this.prisma.server.create({
+                    data: {
+                        guildId: guildId,
+                    },
+                });
+            }
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId @param {boolean} ratSpawned  */
+    async updateRatSpawned(guildId, ratSpawned) {
+        try {
+            await this.prisma.server.update({
+                where: {
+                    guildId: guildId,
+                },
+                data: {
+                    ratSpawned: ratSpawned,
+                },
+            });
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId  */
+    async getRatSpawned(guildId) {
+        try {
+            const server = await this.prisma.server.findUnique({
+                where: {
+                    guildId: guildId,
+                },
+            });
+            return server.ratSpawned;
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    async resetRatSpawned() {
+        try {
+            await this.prisma.server.updateMany({
+                data: {
+                    ratSpawned: false,
+                },
+            });
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId @param {Number} timeSinceLastRatSpawn   */
+    async updateTimeSinceLastRatSpawn(guildId, timeSinceLastRatSpawn) {
+        try {
+            await this.prisma.server.update({
+                where: {
+                    guildId: guildId,
+                },
+                data: {
+                    timeSinceLastSpawn: timeSinceLastRatSpawn.toString(),
+                },
+            });
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId */
+    async getTimeSinceLastRatSpawn(guildId) {
+        try {
+            const server = await this.prisma.server.findUnique({
+                where: {
+                    guildId: guildId,
+                },
+            });
+            return Number(server.timeSinceLastSpawn);
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId @param {string} channelId @param {string} messageId   */
+    async addRatMessage(guildId, channelId, messageId) {
+        try {
+            await this.prisma.ratMessage.create({
+                data: {
+                    guildId: guildId,
+                    channelId: channelId,
+                    messageId: messageId,
+                },
+            });
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} messageId   */
+    async removeRatMessage(messageId) {
+        try {
+            await this.prisma.ratMessage.delete({
+                where: {
+                    messageId: messageId,
+                },
+            });
+        } catch (error) {
+            log(error);
+        }
     }
 }
 
-function createDatabase() {
-    // TODO: Change to promise
-    const db = new sqlite3.Database(
-        DB_PATH,
-        sqlite3.OPEN_READWRITE,
-        (error) => {
-            if (error) return console.error(error.message);
-        }
-    );
-    db.run(
-        "CREATE TABLE IF NOT EXISTS servers(guildId TEXT PRIMARY KEY, ratSpawned INTEGER NOT NULL);"
-    );
-    db.close();
-}
-
-function setupServer(guildId) {
-    // TODO: Change to promise
-    const db = new sqlite3.Database(
-        DB_PATH,
-        sqlite3.OPEN_READWRITE,
-        (error) => {
-            if (error) return console.error(error.message);
-        }
-    );
-
-    db.all(
-        "SELECT * FROM servers WHERE guildId = ?",
-        [guildId],
-        (err, rows) => {
-            if (err) {
-                console.log(err);
-            }
-            if (rows.length === 0) {
-                db.run("INSERT INTO servers VALUES(?, ?)", [guildId, 0]);
-                db.close();
-            }
-        }
-    );
-}
-
-function updateServer(guildId, ratSpawned) {
-    const db = new sqlite3.Database(
-        DB_PATH,
-        sqlite3.OPEN_READWRITE,
-        (error) => {
-            if (error) return console.error(error.message);
-        }
-    );
-
-    const promise = new Promise((resolve, reject) => {
-        db.run(
-            "UPDATE servers SET ratSpawned = ? WHERE guildId = ?",
-            [ratSpawned, guildId],
-            (err) => {
-                if (err) {
-                    console.log(err);
-                    reject(err);
-                }
-                resolve();
-                db.close();
-            }
-        );
-    });
-    return promise;
-}
-
-async function getRatSpawned(guildId) {
-    const db = new sqlite3.Database(
-        DB_PATH,
-        sqlite3.OPEN_READWRITE,
-        (error) => {
-            if (error) return console.error(error.message);
-        }
-    );
-
-    const promise = new Promise((resolve, reject) => {
-        db.all(
-            "SELECT * FROM servers WHERE guildId = ?",
-            [guildId],
-            (err, rows) => {
-                if (err) {
-                    console.log(err);
-                    reject(err);
-                }
-                if (rows.length !== 0) {
-                    resolve(rows[0].ratSpawned);
-                } else {
-                    resolve(null);
-                }
-                db.close();
-            }
-        );
-    });
-
-    return promise;
-}
-
-async function resetRatSpawned() {
-    const db = new sqlite3.Database(
-        DB_PATH,
-        sqlite3.OPEN_READWRITE,
-        (error) => {
-            if (error) return console.error(error.message);
-        }
-    );
-
-    const promise = new Promise((resolve, reject) => {
-        db.run("UPDATE servers SET ratSpawned = 0", (err) => {
-            if (err) {
-                console.log(err);
-                reject(err);
-            }
-            db.close();
-            resolve();
-        });
-    });
-    return promise;
-}
-
-async function main() {
-    console.log(await getRatSpawned("0"));
-}
-main();
+const db = new Database();
 
 module.exports = {
-    createDatabase,
-    setupServer,
-    updateServer,
-    getRatSpawned,
-    resetRatSpawned,
+    db,
 };

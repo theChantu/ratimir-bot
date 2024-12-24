@@ -6,3 +6,6 @@ debug.txt
 package-lock.json
 ideas.md
 pnpm-lock.yaml
+src/database/database.db
+src/database/database.db-journal
+testing.js
