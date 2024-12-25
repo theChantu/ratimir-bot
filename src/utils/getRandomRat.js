@@ -1,8 +1,8 @@
 const { rats } = require("../config/rats");
 
 function getRandomRat() {
-    const values = rats.map((d) => d[0]);
-    const weights = rats.map((d) => d[1]);
+    const values = rats.map((d) => d.name);
+    const weights = rats.map((d) => d.weight);
 
     let sum = 0;
     const accumulatedWeights = [];

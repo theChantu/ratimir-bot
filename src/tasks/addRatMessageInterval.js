@@ -6,12 +6,12 @@ const {
     DELETE_MESSAGE_TIME,
 } = require("../config/globals");
 
-/** @param {Message} message @param {EmbedData} embed   */
-function addRatMessageInterval(message, rat, embed) {
+/** @param {Message} message */
+function addRatMessageInterval(message, rat) {
     // Store in case this shit gets deleted some time after interval runs
     const { guildId, id } = message;
 
-    const [ratName, ratWeight, ratImg] = rat;
+    const { name, weight, image } = rat;
 
     const interval = setInterval(async () => {
         log("Message edit interval running...");
@@ -19,7 +19,6 @@ function addRatMessageInterval(message, rat, embed) {
         const timeSinceLastRatSpawn = await db.getTimeSinceLastRatSpawn(
             guildId
         );
-        log("timeSinceLastRatSpawn:", timeSinceLastRatSpawn);
 
         try {
             if (Date.now() >= timeSinceLastRatSpawn + DELETE_MESSAGE_TIME) {
@@ -42,15 +41,18 @@ function addRatMessageInterval(message, rat, embed) {
 
             const timeUntilDestruction =
                 timeSinceLastRatSpawn + DELETE_MESSAGE_TIME - Date.now();
-            log("timeUntilDestruction:", timeUntilDestruction / 1000 / 60);
+            log(
+                `Time until ${message.guild.name}'s rat gets deleted:`,
+                timeUntilDestruction / 1000 / 60
+            );
 
             const embed = new EmbedBuilder();
 
             embed
-                .setTitle(ratName.toUpperCase())
+                .setTitle(name.toUpperCase())
                 .setDescription("Holy mother of god.")
                 .setColor("Random")
-                .setImage(`attachment://${ratImg}`)
+                .setImage(`attachment://${image}`)
                 .setFields({
                     name: "Time until destruction:",
                     value: `💣 ${timeUntilDestruction / 1000 / 60} minute(s)`,
@@ -62,7 +64,7 @@ function addRatMessageInterval(message, rat, embed) {
             });
         } catch (error) {
             if (error.code === 10008) {
-                log("index: Message not found.");
+                log("addRatMessageInterval: Message not found.");
             } else {
                 log(error);
             }

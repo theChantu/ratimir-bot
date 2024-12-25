@@ -129,15 +129,14 @@ class Database {
         }
     }
 
-    /** @param {string} userId @param {string} ratType  */
-    async claimRat(userId, ratType) {
+    /** @param {string} guildId  @param {string} userId @param {string} ratType  */
+    async claimRat(guildId, userId, ratType) {
         try {
             const user = await this.prisma.ratCount.findFirst({
                 where: {
+                    guildId: guildId,
                     userId: userId,
-                    AND: {
-                        ratType: ratType,
-                    },
+                    ratType: ratType,
                 },
             });
 
@@ -145,6 +144,7 @@ class Database {
             if (user === null) {
                 await this.prisma.ratCount.create({
                     data: {
+                        guildId: guildId,
                         userId: userId,
                         ratType: ratType,
                         count: 1,
@@ -155,7 +155,8 @@ class Database {
                 const prevCount = user.count;
                 await this.prisma.ratCount.update({
                     where: {
-                        userId_ratType: {
+                        guildId_userId_ratType: {
+                            guildId: guildId,
                             userId: userId,
                             ratType: ratType,
                         },
@@ -170,16 +171,32 @@ class Database {
         }
     }
 
-    /** @param {string} userId  */
-    async fetchUsersRats(userId) {
+    /** @param {string} guildId  @param {string} userId  */
+    async fetchUsersRats(guildId, userId) {
         try {
             const user = await this.prisma.ratCount.findMany({
                 where: {
+                    guildId: guildId,
                     userId: userId,
                 },
             });
 
             return user;
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId  */
+    async fetchGuildRats(guildId) {
+        try {
+            const guild = await this.prisma.ratCount.findMany({
+                where: {
+                    guildId: guildId,
+                },
+            });
+
+            return guild;
         } catch (error) {
             log(error);
         }

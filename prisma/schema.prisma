@@ -14,6 +14,8 @@ model Server {
   timeSinceLastSpawn String @default("0")
 }
 
+/// TODO: Merge server and ratmessage. Only one rat can spawn in a guild at a time and if ratSpawned is set to true in a server then the bot can attempt delete the rat message on startup
+
 model RatMessage {
   guildId String
   channelId String
@@ -21,9 +23,10 @@ model RatMessage {
 }
 
 model RatCount {
+  guildId String
   userId String
   ratType String
   count Int
 
-  @@unique([userId, ratType])
+  @@unique([guildId, userId, ratType])
 }

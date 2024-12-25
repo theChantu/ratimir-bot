@@ -9,20 +9,14 @@ const {
     GoogleGenerativeAIResponseError,
     GoogleGenerativeAIFetchError,
 } = require("@google/generative-ai");
-const {
-    ClientUser,
-    ActionRowBuilder,
-    ButtonBuilder,
-    Message,
-    TextChannel,
-    ChannelType,
-} = require("discord.js");
+const { TextChannel } = require("discord.js");
 const { getRandomRat } = require("./utils/getRandomRat.js");
 const { db } = require("./database/database.js");
 const stateManager = require("./utils/StateManager.js");
 const { spawnRat } = require("./tasks/spawnRat.js");
 const { log } = require("./utils/log.js");
 const { deleteRatMessages } = require("./utils/deleteRatMessages.js");
+const { addRatMessageInterval } = require("./tasks/addRatMessageInterval.js");
 
 const TOKEN = process.env.TOKEN;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -197,7 +191,29 @@ client.once("ready", async (client) => {
                 // Spawn a rat in the best channel for this guild
                 if (bestChannel !== null) {
                     log("Spawning rat in", bestChannel.guild.name);
-                    await spawnRat(client, bestChannel.id);
+                    const randomRat = getRandomRat();
+
+                    const ratMessage = await spawnRat(
+                        client,
+                        bestChannel.id,
+                        randomRat
+                    );
+
+                    await db.updateRatSpawned(guildId, true);
+
+                    const time = Date.now();
+                    // Update global timeSinceLastRatSpawn
+                    stateManager.set("timeSinceLastRatSpawn", time);
+                    // Update guild timeSinceLastRatSpawn
+                    await db.updateTimeSinceLastRatSpawn(guildId, time);
+                    await db.addRatMessage(
+                        guildId,
+                        bestChannel.id,
+                        ratMessage.id
+                    );
+
+                    // Add cool effects to the message
+                    addRatMessageInterval(ratMessage, randomRat);
                 }
             }
         }
@@ -212,18 +228,24 @@ client.once("ready", async (client) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-    // TODO: This lets me know the guildId and the user, update the db based on that
     if (interaction.isButton()) {
         try {
             const guildId = interaction.guildId;
             // Prevent multiple users from catching the same rat
             const ratSpawned = await db.getRatSpawned(guildId);
             if (ratSpawned) {
-                console.log(interaction.guildId);
-                log(interaction.user.id, `caught a ${interaction.customId}!`);
-                await interaction.message.delete();
+                log(
+                    interaction.user.globalName,
+                    `caught a ${interaction.customId}!`
+                );
                 await db.updateRatSpawned(guildId, false);
-                await db.claimRat(interaction.user.id, interaction.customId);
+                // customId stores ratType string
+                await db.claimRat(
+                    guildId,
+                    interaction.user.id,
+                    interaction.customId
+                );
+                await interaction.message.delete();
             }
         } catch (error) {
             log(error);
