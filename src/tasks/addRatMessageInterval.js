@@ -1,4 +1,4 @@
-const { Message, EmbedBuilder } = require("discord.js");
+const { Message, EmbedBuilder, ComponentType } = require("discord.js");
 const { log } = require("../utils/log");
 const { db } = require("../database/database");
 const {
@@ -7,7 +7,7 @@ const {
 } = require("../config/globals");
 
 /** @param {Message} message */
-function addRatMessageInterval(message, rat) {
+async function addRatMessageInterval(message, rat) {
     // Store in case this shit gets deleted some time after interval runs
     const { guildId, id } = message;
 
@@ -74,6 +74,29 @@ function addRatMessageInterval(message, rat) {
             clearInterval(interval);
         }
     }, MESSAGE_EDIT_INTERVAL_RATE);
+
+    const collector = message.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        max: 1,
+    });
+
+    collector.on("collect", async (interaction) => {
+        try {
+            const guildId = interaction.guildId;
+            log(
+                interaction.user.globalName,
+                `caught a ${interaction.customId}!`
+            );
+            await db.updateRatSpawned(guildId, false);
+            await db.claimRat(guildId, interaction.user.id, name);
+            await db.removeRatMessage(interaction.message.id);
+            await interaction.message.delete();
+        } catch (error) {
+            log(error);
+        } finally {
+            clearInterval(interval);
+        }
+    });
 
     // return () => clearInterval(interval);
 }

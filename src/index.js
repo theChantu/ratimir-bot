@@ -17,6 +17,10 @@ const { spawnRat } = require("./tasks/spawnRat.js");
 const { log } = require("./utils/log.js");
 const { deleteRatMessages } = require("./utils/deleteRatMessages.js");
 const { addRatMessageInterval } = require("./tasks/addRatMessageInterval.js");
+const {
+    MINIMUM_TIME_INTERVAL_RUNS,
+    MAXIMUM_TIME_INTERVAL_RUNS,
+} = require("./config/globals.js");
 
 const TOKEN = process.env.TOKEN;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -102,18 +106,10 @@ const model = genAI.getGenerativeModel({
         "Begrudgingly answer every prompt. Your name is Ratimir.",
 });
 
-stateManager.set("timeSinceLastRatSpawn", null);
-
-// 5 minutes TODO: Set back to 300000
-const INTERVAL_RATE = 15000;
-// TODO: Set back to 200000000 (2 ish days)
-const RAT_SPAWN_RATE = 15000;
 const timeouts = [];
 
 client.once("ready", async (client) => {
-    // Setup the database
-    // This will happen at the top of this file (not in this callback function)
-    // FIXME: createDatabase not creating the database. Furthermore, the table is also not being created.
+    await db.setup(client);
 
     // Reset all servers to ratSpawned = false
     await db.resetRatSpawned();
@@ -129,92 +125,80 @@ client.once("ready", async (client) => {
     async function intervalFunction() {
         log("Ready interval running...");
 
-        const timeSinceLastRatSpawn = stateManager.get("timeSinceLastRatSpawn");
-        if (
-            Date.now() >= timeSinceLastRatSpawn + RAT_SPAWN_RATE ||
-            timeSinceLastRatSpawn === null
-        ) {
-            const guilds = client.channels.cache;
-            const textChannels = guilds.filter((guild) => guild.type === 0);
-            // Sort channels into seperate arrays based on matching guild
-            /**@type {Array<{guildId: string, channels: TextChannel[]}>} */
-            const sortedGuildsTCs = textChannels.reduce((result, obj) => {
-                const existingGroup = result.find(
-                    (group) => group.guildId === obj.guildId
-                );
-                if (existingGroup) {
-                    existingGroup.channels.push(obj);
-                } else {
-                    result.push({ guildId: obj.guildId, channels: [obj] });
-                }
-                return result;
-            }, []);
-            for (const { guildId, channels } of sortedGuildsTCs) {
-                // Don't spawn rat for this guild if one is already spawned
-                const ratSpawned = await db.getRatSpawned(guildId);
-                if (ratSpawned) continue;
-                // Find best channel based on the date of the last message sent
-                let bestChannel = null;
-                let bestMessageTimestamp = null;
-                for (const channel of channels) {
-                    try {
-                        // No channel found yet so set it to the first channel
-                        if (bestChannel === null) {
+        const guilds = client.channels.cache;
+        const textChannels = guilds.filter((channel) => channel.type === 0);
+        // Sort channels into seperate arrays based on matching guild
+        /**@type {Array<{guildId: string, channels: TextChannel[]}>} */
+        const sortedGuildsTCs = textChannels.reduce((result, obj) => {
+            const existingGroup = result.find(
+                (group) => group.guildId === obj.guildId
+            );
+            if (existingGroup) {
+                existingGroup.channels.push(obj);
+            } else {
+                result.push({ guildId: obj.guildId, channels: [obj] });
+            }
+            return result;
+        }, []);
+        for (const { guildId, channels } of sortedGuildsTCs) {
+            // Don't spawn rat for this guild if one is already spawned
+            const ratSpawned = await db.getRatSpawned(guildId);
+            if (ratSpawned) continue;
+            // Find best channel based on the date of the last message sent
+            let bestChannel = null;
+            let bestMessageTimestamp = null;
+            for (const channel of channels) {
+                try {
+                    // No channel found yet so set it to the first channel
+                    if (bestChannel === null) {
+                        bestChannel = channel;
+                        const lastChannelMessage = await channel.messages.fetch(
+                            channel.lastMessageId
+                        );
+                        bestMessageTimestamp =
+                            lastChannelMessage.createdTimestamp;
+                    } else {
+                        const lastChannelMessage = await channel.messages.fetch(
+                            channel.lastMessageId
+                        );
+                        const messageTimestamp =
+                            lastChannelMessage.createdTimestamp;
+                        if (messageTimestamp >= bestMessageTimestamp) {
                             bestChannel = channel;
-                            const lastChannelMessage =
-                                await channel.messages.fetch(
-                                    channel.lastMessageId
-                                );
-                            bestMessageTimestamp =
-                                lastChannelMessage.createdTimestamp;
-                        } else {
-                            const lastChannelMessage =
-                                await channel.messages.fetch(
-                                    channel.lastMessageId
-                                );
-                            const messageTimestamp =
-                                lastChannelMessage.createdTimestamp;
-                            if (messageTimestamp >= bestMessageTimestamp) {
-                                bestChannel = channel;
-                                bestMessageTimestamp = messageTimestamp;
-                            }
+                            bestMessageTimestamp = messageTimestamp;
                         }
-                    } catch (error) {
-                        if (error.code === 10008) {
-                            log("index: Message not found.");
-                        } else {
-                            log(error);
-                        }
-                        continue;
                     }
+                } catch (error) {
+                    if (error.code === 10008) {
+                        log("index: Message not found.");
+                    } else {
+                        log(error);
+                    }
+                    continue;
                 }
-                // Spawn a rat in the best channel for this guild
-                if (bestChannel !== null) {
-                    log("Spawning rat in", bestChannel.guild.name);
-                    const randomRat = getRandomRat();
+            }
+            // Spawn a rat in the best channel for this guild
+            if (bestChannel !== null) {
+                log("Spawning rat in", bestChannel.guild.name);
+                const randomRat = getRandomRat();
 
-                    const ratMessage = await spawnRat(
-                        client,
-                        bestChannel.id,
-                        randomRat
-                    );
+                const ratMessage = await spawnRat(
+                    client,
+                    bestChannel.id,
+                    randomRat
+                );
 
-                    await db.updateRatSpawned(guildId, true);
+                await db.updateRatSpawned(guildId, true);
 
-                    const time = Date.now();
-                    // Update global timeSinceLastRatSpawn
-                    stateManager.set("timeSinceLastRatSpawn", time);
-                    // Update guild timeSinceLastRatSpawn
-                    await db.updateTimeSinceLastRatSpawn(guildId, time);
-                    await db.addRatMessage(
-                        guildId,
-                        bestChannel.id,
-                        ratMessage.id
-                    );
+                const time = Date.now();
+                // Update global timeSinceLastRatSpawn
+                // stateManager.set("timeSinceLastRatSpawn", time);
+                // Update guild timeSinceLastRatSpawn
+                await db.updateTimeSinceLastRatSpawn(guildId, time);
+                await db.addRatMessage(guildId, bestChannel.id, ratMessage.id);
 
-                    // Add cool effects to the message
-                    addRatMessageInterval(ratMessage, randomRat);
-                }
+                // Add cool effects to the message
+                await addRatMessageInterval(ratMessage, randomRat);
             }
         }
     }
@@ -222,39 +206,44 @@ client.once("ready", async (client) => {
     // Spawn a rat immidiately the first time the bot is started
     await intervalFunction();
 
-    // 1000 milliseconds in a second
-    // Spawn a rat every 3 days
-    setInterval(intervalFunction, INTERVAL_RATE);
+    function setRandomInterval(intervalFunction, minDelay, maxDelay) {
+        let timeout;
+
+        const runInterval = () => {
+            const timeoutFunction = () => {
+                intervalFunction();
+                runInterval();
+            };
+
+            const delay =
+                Math.floor(Math.random() * (maxDelay - minDelay + 1)) +
+                minDelay;
+
+            log("delay:", delay);
+
+            timeout = setTimeout(timeoutFunction, delay);
+        };
+
+        runInterval();
+
+        return {
+            clear() {
+                clearTimeout(timeout);
+            },
+        };
+    }
+
+    // Spawn a rat every 1 to 6 hours
+    // setInterval(intervalFunction, INTERVAL_RATE);
+    setRandomInterval(
+        intervalFunction,
+        MINIMUM_TIME_INTERVAL_RUNS,
+        MAXIMUM_TIME_INTERVAL_RUNS
+    );
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-    if (interaction.isButton()) {
-        try {
-            const guildId = interaction.guildId;
-            // Prevent multiple users from catching the same rat
-            const ratSpawned = await db.getRatSpawned(guildId);
-            if (ratSpawned) {
-                log(
-                    interaction.user.globalName,
-                    `caught a ${interaction.customId}!`
-                );
-                await db.updateRatSpawned(guildId, false);
-                // customId stores ratType string
-                await db.claimRat(
-                    guildId,
-                    interaction.user.id,
-                    interaction.customId
-                );
-                await interaction.message.delete();
-            }
-        } catch (error) {
-            log(error);
-        } finally {
-            return;
-        }
-    }
-
-    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand() || interaction.isButton()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);
 

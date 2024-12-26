@@ -1,10 +1,24 @@
 const { PrismaClient } = require("@prisma/client");
 const { log } = require("../utils/log");
+const { Client } = require("discord.js");
 
 // Testing things
 class Database {
     constructor() {
         this.prisma = new PrismaClient();
+    }
+
+    /** @param {Client} client  */
+    async setup(client) {
+        try {
+            const guilds = client.guilds.cache;
+
+            for (const [string, guild] of guilds) {
+                await this.setupServer(guild.id);
+            }
+        } catch (error) {
+            log(error);
+        }
     }
 
     /** @param {string} guildId  */

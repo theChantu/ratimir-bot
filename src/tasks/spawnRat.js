@@ -49,12 +49,16 @@ async function spawnRat(client, channelId, rat) {
         embeds: [embed],
         files: [file],
     };
-    /**@type {TextChannel} */
-    const channel = await client.channels.fetch(channelId);
-    /** @type {Message}*/
-    const message = await channel.send(messageObject);
+    try {
+        /**@type {TextChannel} */
+        const channel = await client.channels.fetch(channelId);
+        /** @type {Message}*/
+        const message = await channel.send(messageObject);
 
-    return message;
+        return message;
+    } catch (error) {
+        log("spawnRat: Could not spawn a rat.");
+    }
 }
 module.exports = {
     spawnRat,
