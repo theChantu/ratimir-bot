@@ -149,6 +149,8 @@ client.once("ready", async (client) => {
             let bestMessageTimestamp = null;
             for (const channel of channels) {
                 try {
+                    // TODO: If message is deleted don't set it to bestChannel
+
                     // No channel found yet so set it to the first channel
                     if (bestChannel === null) {
                         bestChannel = channel;
@@ -288,11 +290,20 @@ client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
     if (message.reference) {
-        log(message.content);
-        const result = await model.generateContent(message.content);
+        try {
+            const repliedTo = await message.channel.messages.fetch(
+                message.reference.messageId
+            );
 
-        await message.reply(result.response.text());
-        return;
+            if (repliedTo.author.id === CLIENT_ID) {
+                const result = await model.generateContent(message.content);
+
+                await message.reply(result.response.text());
+                return;
+            }
+        } catch (error) {
+            log(error);
+        }
     }
 
     if (message.content.startsWith(`<@${CLIENT_ID}>`)) {
