@@ -9,7 +9,7 @@ const { db } = require("../../database/database");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ratboard")
-        .setDescription("YOU WHAT?!?!"),
+        .setDescription("A board with rats."),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
         const guild = await db.fetchUsersRats(interaction.guildId);

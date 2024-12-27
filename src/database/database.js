@@ -29,7 +29,6 @@ class Database {
                     guildId: guildId,
                 },
             });
-            log("foundGuild:", guild);
             // Only add if it doesn't exist
             if (guild === null) {
                 await this.prisma.server.create({

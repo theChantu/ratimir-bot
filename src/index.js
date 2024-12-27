@@ -83,7 +83,7 @@ function checkMessage(message, array = []) {
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
+    model: "gemini-2.0-flash-exp",
     safetySettings: [
         {
             category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -203,8 +203,8 @@ client.once("ready", async (client) => {
         }
     }
 
-    // Spawn a rat immidiately the first time the bot is started
-    await intervalFunction();
+    // Uncomment to immediately spawn a rat when bot is started
+    // await intervalFunction();
 
     function setRandomInterval(intervalFunction, minDelay, maxDelay) {
         let timeout;
@@ -219,7 +219,7 @@ client.once("ready", async (client) => {
                 Math.floor(Math.random() * (maxDelay - minDelay + 1)) +
                 minDelay;
 
-            log("delay:", delay);
+            log("Next interval will start in:", delay / 1000, "seconds");
 
             timeout = setTimeout(timeoutFunction, delay);
         };
@@ -278,13 +278,23 @@ client.on("guildCreate", (guild) => {
 });
 
 client.on("messageCreate", async (message) => {
-    if (timeouts.includes(message.author.id)) return;
+    // if (timeouts.includes(message.author.id)) return;
 
     // TODO: Handle a case where the bot is replied to.
     // TODO: Handle a case where the bot is mentioned in a reply.
-    if (!message.author.bot && message.content.startsWith(`<@${CLIENT_ID}>`)) {
+    if (message.author.bot) return;
+
+    if (message.reference) {
+        log(message.content);
+        const result = await model.generateContent(message.content);
+
+        await message.reply(result.response.text());
+        return;
+    }
+
+    if (message.content.startsWith(`<@${CLIENT_ID}>`)) {
         // First add the user to the timeout array.
-        timeouts.push(message.author.id);
+        // timeouts.push(message.author.id);
 
         try {
             await message.channel.sendTyping();
@@ -296,7 +306,7 @@ client.on("messageCreate", async (message) => {
             prevMessages.reverse();
             let current = "user";
             prevMessages.forEach((msg) => {
-                if (msg.author.id === CLIENT_ID) {
+                if (msg.author.id === CLIENT_ID && msg.content !== "") {
                     if (current === "model") {
                         messages.push({
                             role: "model",
@@ -323,7 +333,10 @@ client.on("messageCreate", async (message) => {
             // This is the newest user message and will be used to start a chat with the history of messages.
             const msg = messages.pop();
 
-            const chat = model.startChat({ history: messages });
+            const chat = model.startChat({
+                generationConfig: { temperature: 2 },
+                history: messages,
+            });
 
             const result = await chat.sendMessage(msg.parts);
 
@@ -339,7 +352,7 @@ client.on("messageCreate", async (message) => {
                 );
             } else if (error instanceof GoogleGenerativeAIFetchError) {
                 message.channel.send(
-                    "Ratimir is getting too many requests. Try again in 1 minute."
+                    "Ratimir is getting too many requests. Try again in a few minutes."
                 );
             } else {
                 message.channel.send(
@@ -349,9 +362,9 @@ client.on("messageCreate", async (message) => {
         } finally {
             // TODO: Change from setTimeout to checking in a database. E.g. person.lastMessageTime >= person.lastMessageTime + 6000
             // Remove the user from the timeout array.
-            setTimeout(() => {
-                timeouts.splice(timeouts.indexOf(message.author.id), 1);
-            }, 6000);
+            // setTimeout(() => {
+            //     timeouts.splice(timeouts.indexOf(message.author.id), 1);
+            // }, 6000);
         }
     }
 });

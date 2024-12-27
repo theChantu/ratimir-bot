@@ -20,10 +20,10 @@ const { DELETE_MESSAGE_TIME } = require("../config/globals");
 /**
  * @param {Client} client
  * @param {string} channelId
- * @param {Rat} rat
+ * @param {import("../config/rats").Rat} rat
  */
 async function spawnRat(client, channelId, rat) {
-    const { name, weight, image } = rat;
+    const { name, description, weight, image } = rat;
 
     const row = new ActionRowBuilder();
     const embed = new EmbedBuilder();
@@ -34,12 +34,12 @@ async function spawnRat(client, channelId, rat) {
     );
     embed
         .setTitle(name.toUpperCase())
-        .setDescription("Holy mother of god.")
+        .setDescription(description)
         .setColor("Random")
         .setImage(`attachment://${image}`)
         .setFields({
-            name: "Time until destruction:",
-            value: `💣 ${DELETE_MESSAGE_TIME / 1000 / 60} minute(s)`,
+            name: "TIME UNTIL DESTRUCTION",
+            value: `⏳ ${DELETE_MESSAGE_TIME / 1000 / 60} minute(s)`,
             inline: true,
         });
 

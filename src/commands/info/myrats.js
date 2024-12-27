@@ -9,7 +9,7 @@ const { db } = require("../../database/database");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("myrats")
-        .setDescription("Oh no... my rats."),
+        .setDescription("Oh shit... my rats."),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
         const user = await db.fetchUsersRats(

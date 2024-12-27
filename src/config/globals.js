@@ -1,7 +1,7 @@
 // 1 minute in milliseconds
-const MESSAGE_EDIT_INTERVAL_RATE = 10000;
+const MESSAGE_EDIT_INTERVAL_RATE = 3 * 60 * 60 * 1000;
 // 5 minutes in milliseconds
-const DELETE_MESSAGE_TIME = 30000;
+const DELETE_MESSAGE_TIME = 8 * 60 * 60 * 1000;
 //
 // const MINIMUM_TIME_INTERVAL_RUNS = 1 * 60 * 60 * 1000;
 // const MAXIMUM_TIME_INTERVAL_RUNS = 6 * 60 * 60 * 1000;

@@ -6,12 +6,12 @@ const {
     DELETE_MESSAGE_TIME,
 } = require("../config/globals");
 
-/** @param {Message} message */
+/** @param {Message} message @param {import("../config/rats").Rat} rat  */
 async function addRatMessageInterval(message, rat) {
     // Store in case this shit gets deleted some time after interval runs
     const { guildId, id } = message;
 
-    const { name, weight, image } = rat;
+    const { name, description, weight, image } = rat;
 
     const interval = setInterval(async () => {
         log("Message edit interval running...");
@@ -50,12 +50,14 @@ async function addRatMessageInterval(message, rat) {
 
             embed
                 .setTitle(name.toUpperCase())
-                .setDescription("Holy mother of god.")
+                .setDescription(description)
                 .setColor("Random")
                 .setImage(`attachment://${image}`)
                 .setFields({
-                    name: "Time until destruction:",
-                    value: `💣 ${timeUntilDestruction / 1000 / 60} minute(s)`,
+                    name: "TIME UNTIL DESTRUCTION",
+                    value: `⌛ ${Math.ceil(
+                        timeUntilDestruction / 1000 / 60
+                    )} minute(s)`,
                     inline: true,
                 });
 
