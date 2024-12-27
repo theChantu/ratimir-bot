@@ -15,16 +15,22 @@ const rats = [
         image: "bilgerat.jpeg",
     },
     {
-        name: "stingy rat",
-        description: "g",
+        name: "expired rat",
+        description: '"Died of natural causes."',
         weight: 50,
-        image: "stingyrat.jpeg",
+        image: "expiredrat.jpeg",
     },
     {
         name: "stinky rat",
         description: "Get this rat a piece of cheese.",
         weight: 50,
         image: "stinkyrat.jpeg",
+    },
+    {
+        name: "decrepit rat",
+        description: "This rat has a nice lawn.",
+        weight: 20,
+        image: "decrepitrat.jpeg",
     },
     {
         name: "business rat",

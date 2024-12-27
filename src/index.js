@@ -204,7 +204,7 @@ client.once("ready", async (client) => {
     }
 
     // Uncomment to immediately spawn a rat when bot is started
-    // await intervalFunction();
+    await intervalFunction();
 
     function setRandomInterval(intervalFunction, minDelay, maxDelay) {
         let timeout;
@@ -219,7 +219,11 @@ client.once("ready", async (client) => {
                 Math.floor(Math.random() * (maxDelay - minDelay + 1)) +
                 minDelay;
 
-            log("Next interval will start in:", delay / 1000, "seconds");
+            log(
+                "Next interval will start in:",
+                delay / 60 / 60 / 1000,
+                "hours"
+            );
 
             timeout = setTimeout(timeoutFunction, delay);
         };
@@ -234,7 +238,6 @@ client.once("ready", async (client) => {
     }
 
     // Spawn a rat every 1 to 6 hours
-    // setInterval(intervalFunction, INTERVAL_RATE);
     setRandomInterval(
         intervalFunction,
         MINIMUM_TIME_INTERVAL_RUNS,
