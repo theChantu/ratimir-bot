@@ -9,6 +9,7 @@ const {
 } = require("discord.js");
 const { AttachmentBuilder } = require("discord.js");
 const { DELETE_MESSAGE_TIME } = require("../config/globals");
+const { log } = require("../utils/log");
 
 /**
  * @typedef {Object} Rat
