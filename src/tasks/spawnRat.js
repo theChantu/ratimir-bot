@@ -34,7 +34,7 @@ async function spawnRat(client, channelId, rat) {
         new ButtonBuilder().setCustomId(name).setLabel("Catch").setStyle(3)
     );
     embed
-        .setTitle(name.toUpperCase())
+        .setTitle(`${name.toUpperCase()} RAT`)
         .setDescription(description)
         .setColor("Random")
         .setImage(`attachment://${image}`)

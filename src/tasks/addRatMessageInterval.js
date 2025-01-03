@@ -16,12 +16,10 @@ async function addRatMessageInterval(message, rat) {
     const interval = setInterval(async () => {
         log("Message edit interval running...");
 
-        const timeSinceLastRatSpawn = await db.getTimeSinceLastRatSpawn(
-            guildId
-        );
+        const ratMessageCreatedAt = await db.getRatMessageTimestamp(guildId);
 
         try {
-            if (Date.now() >= timeSinceLastRatSpawn + DELETE_MESSAGE_TIME) {
+            if (Date.now() >= ratMessageCreatedAt + DELETE_MESSAGE_TIME) {
                 await message.edit({
                     content: "*blows up*",
                     components: [],
@@ -33,14 +31,13 @@ async function addRatMessageInterval(message, rat) {
                 //     });
                 // }, 3000);
                 await message.delete();
-                await db.updateRatSpawned(guildId, false);
-                await db.removeRatMessage(id);
+                await db.removeRatMessage(guildId);
                 clearInterval(interval);
                 return;
             }
 
             const timeUntilDestruction =
-                timeSinceLastRatSpawn + DELETE_MESSAGE_TIME - Date.now();
+                ratMessageCreatedAt + DELETE_MESSAGE_TIME - Date.now();
             log(
                 `Time until ${message.guild.name}'s rat gets deleted:`,
                 timeUntilDestruction / 1000 / 60
@@ -49,7 +46,7 @@ async function addRatMessageInterval(message, rat) {
             const embed = new EmbedBuilder();
 
             embed
-                .setTitle(name.toUpperCase())
+                .setTitle(`${name.toUpperCase()} RAT`)
                 .setDescription(description)
                 .setColor("Random")
                 .setImage(`attachment://${image}`)
@@ -71,8 +68,7 @@ async function addRatMessageInterval(message, rat) {
                 log(error);
             }
 
-            await db.updateRatSpawned(guildId, false);
-            await db.removeRatMessage(id);
+            await db.removeRatMessage(guildId);
             clearInterval(interval);
         }
     }, MESSAGE_EDIT_INTERVAL_RATE);
@@ -89,9 +85,8 @@ async function addRatMessageInterval(message, rat) {
                 interaction.user.globalName,
                 `caught a ${interaction.customId}!`
             );
-            await db.updateRatSpawned(guildId, false);
             await db.claimRat(guildId, interaction.user.id, name);
-            await db.removeRatMessage(interaction.message.id);
+            await db.removeRatMessage(interaction.guildId);
             await interaction.message.delete();
         } catch (error) {
             log(error);

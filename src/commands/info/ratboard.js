@@ -16,16 +16,16 @@ module.exports = {
         const embed = new EmbedBuilder();
 
         // TODO: Limit to only 10 users displayed so that the 6000 character limited isn't exceeded
-        /** @type {Array<{userId: string, value: Number}>} */
+        /** @type {Array<{name: string, value: Number}>} */
         const formattedGuild = guild.reduce((result, obj) => {
             const existingGroup = result.find(
-                (group) => group.userId === obj.userId
+                (group) => group.name === obj.userId
             );
             if (existingGroup) {
                 existingGroup.value += obj.count;
             } else {
                 result.push({
-                    userId: obj.userId,
+                    name: obj.userId,
                     value: obj.count,
                 });
             }
@@ -34,15 +34,19 @@ module.exports = {
 
         const sortedGuild = formattedGuild.sort((a, b) => b.value - a.value);
 
-        let string = "";
-        for (const user of sortedGuild) {
-            string += `<@${user.userId}>: ${user.value} rats\n`;
+        const fields = [];
+
+        for (const [index, user] of sortedGuild.entries()) {
+            fields.push({
+                name: `${(index + 1).toString()}.`,
+                value: `<@${user.name}> ${user.value.toString()}`,
+            });
         }
 
         embed
-            .setTitle(`${interaction.guild.name} Ratboard`)
-            .setDescription(string)
-            .setColor("Random");
+            .setTitle(`${interaction.guild.name} Leaderboard`)
+            .setColor("Random")
+            .setFields(fields);
 
         /** @type {MessagePayload} */
         const messagePayload = {

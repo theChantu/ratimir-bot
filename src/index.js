@@ -12,7 +12,6 @@ const {
 const { TextChannel } = require("discord.js");
 const { getRandomRat } = require("./utils/getRandomRat.js");
 const { db } = require("./database/database.js");
-const stateManager = require("./utils/StateManager.js");
 const { spawnRat } = require("./tasks/spawnRat.js");
 const { log } = require("./utils/log.js");
 const { deleteRatMessages } = require("./utils/deleteRatMessages.js");
@@ -58,6 +57,7 @@ for (const folder of commandFolders) {
     }
 }
 
+// TODO: Remove this function and replace subtractionLength with just the math 💀
 function getStringLength(string) {
     return string.length - 2000;
 }
@@ -106,13 +106,9 @@ const model = genAI.getGenerativeModel({
         "Begrudgingly answer every prompt. Your name is Ratimir.",
 });
 
-const timeouts = [];
-
 client.once("ready", async (client) => {
     await db.setup(client);
 
-    // Reset all servers to ratSpawned = false
-    await db.resetRatSpawned();
     // Delete any rat messages that are left behind
     await deleteRatMessages(client);
 
@@ -142,7 +138,7 @@ client.once("ready", async (client) => {
         }, []);
         for (const { guildId, channels } of sortedGuildsTCs) {
             // Don't spawn rat for this guild if one is already spawned
-            const ratSpawned = await db.getRatSpawned(guildId);
+            const ratSpawned = await db.isRatSpawned(guildId);
             if (ratSpawned) continue;
             // Find best channel based on the date of the last message sent
             let bestChannel = null;
@@ -190,13 +186,6 @@ client.once("ready", async (client) => {
                     randomRat
                 );
 
-                await db.updateRatSpawned(guildId, true);
-
-                const time = Date.now();
-                // Update global timeSinceLastRatSpawn
-                // stateManager.set("timeSinceLastRatSpawn", time);
-                // Update guild timeSinceLastRatSpawn
-                await db.updateTimeSinceLastRatSpawn(guildId, time);
                 await db.addRatMessage(guildId, bestChannel.id, ratMessage.id);
 
                 // Add cool effects to the message

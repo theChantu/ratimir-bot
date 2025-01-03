@@ -8,21 +8,34 @@ datasource db {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model Server {
-  guildId    String @unique
-  ratSpawned Boolean @default(false)
-  timeSinceLastSpawn String @default("0")
+
+// TODO: Redo DB. FIXME: This will impact most of the code.
+
+model Guild {
+  id String @unique
+  ratMessage RatMessage?
 }
 
-/// TODO: Merge server and ratmessage. Only one rat can spawn in a guild at a time and if ratSpawned is set to true in a server then the bot can attempt delete the rat message on startup
-
 model RatMessage {
-  guildId String
+  guild Guild @relation(fields: [guildId], references: [id])
+  guildId String @unique
   channelId String
-  messageId String @unique
+  messageId String
+  createdAt DateTime @default(now())
+}
+
+// FIXME: A user can be in multiple guilds, currently it's only allowing one user in one guild.
+
+model User {
+  id String
+  guildId String
+  ratCount RatCount[]
+
+  @@unique([id, guildId])
 }
 
 model RatCount {
+  user User @relation(fields: [userId, guildId], references: [id, guildId])
   guildId String
   userId String
   ratType String

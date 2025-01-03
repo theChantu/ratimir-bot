@@ -10,7 +10,7 @@ async function deleteRatMessages(client) {
 
     const guildsWithRats = await prisma.ratMessage.findMany();
 
-    for (const { id, guildId, channelId, messageId } of guildsWithRats) {
+    for (const { guildId, channelId, messageId } of guildsWithRats) {
         try {
             /** @type {TextChannel} */
             const channel = client.channels.cache.get(channelId);
@@ -25,7 +25,7 @@ async function deleteRatMessages(client) {
         } finally {
             // Remove this message from database it's not my problem anymore
             try {
-                await db.removeRatMessage(messageId);
+                await db.removeRatMessage(guildId);
             } catch (error) {
                 log("deleteRatMessages: Could not delete message from db.");
             }

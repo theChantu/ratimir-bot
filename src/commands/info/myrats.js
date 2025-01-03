@@ -19,13 +19,22 @@ module.exports = {
         const embed = new EmbedBuilder();
 
         const fields = user.map((rat) => {
-            return { name: rat.ratType, value: rat.count.toString() };
+            return {
+                name:
+                    rat.ratType.charAt(0).toUpperCase() + rat.ratType.slice(1),
+                value: rat.count.toString(),
+            };
         });
 
         embed
             .setTitle(`${interaction.user.username}'s rats`)
-            .setColor("Random")
-            .addFields(fields);
+            .setColor("Random");
+
+        if (user.length !== 0) {
+            embed.addFields(fields);
+        } else {
+            embed.setDescription("Oh nyo! You have no rats. 😭");
+        }
 
         /** @type {MessagePayload} */
         const messagePayload = {

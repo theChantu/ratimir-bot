@@ -24,33 +24,11 @@ class Database {
     /** @param {string} guildId  */
     async setupServer(guildId) {
         try {
-            const guild = await this.prisma.server.findUnique({
-                where: {
-                    guildId: guildId,
-                },
-            });
-            // Only add if it doesn't exist
-            if (guild === null) {
-                await this.prisma.server.create({
-                    data: {
-                        guildId: guildId,
-                    },
-                });
-            }
-        } catch (error) {
-            log(error);
-        }
-    }
-
-    /** @param {string} guildId @param {boolean} ratSpawned  */
-    async updateRatSpawned(guildId, ratSpawned) {
-        try {
-            await this.prisma.server.update({
-                where: {
-                    guildId: guildId,
-                },
-                data: {
-                    ratSpawned: ratSpawned,
+            await this.prisma.guild.upsert({
+                where: { id: guildId },
+                update: { id: guildId },
+                create: {
+                    id: guildId,
                 },
             });
         } catch (error) {
@@ -59,56 +37,33 @@ class Database {
     }
 
     /** @param {string} guildId  */
-    async getRatSpawned(guildId) {
+    async isRatSpawned(guildId) {
         try {
-            const server = await this.prisma.server.findUnique({
+            const guild = await this.prisma.guild.findUnique({
                 where: {
-                    guildId: guildId,
+                    id: guildId,
+                },
+                include: {
+                    ratMessage: true,
                 },
             });
-            return server.ratSpawned;
-        } catch (error) {
-            log(error);
-        }
-    }
 
-    async resetRatSpawned() {
-        try {
-            await this.prisma.server.updateMany({
-                data: {
-                    ratSpawned: false,
-                },
-            });
-        } catch (error) {
-            log(error);
-        }
-    }
-
-    /** @param {string} guildId @param {Number} timeSinceLastRatSpawn   */
-    async updateTimeSinceLastRatSpawn(guildId, timeSinceLastRatSpawn) {
-        try {
-            await this.prisma.server.update({
-                where: {
-                    guildId: guildId,
-                },
-                data: {
-                    timeSinceLastSpawn: timeSinceLastRatSpawn.toString(),
-                },
-            });
+            if (guild.ratMessage !== null) return true;
+            return false;
         } catch (error) {
             log(error);
         }
     }
 
     /** @param {string} guildId */
-    async getTimeSinceLastRatSpawn(guildId) {
+    async getRatMessageTimestamp(guildId) {
         try {
-            const server = await this.prisma.server.findUnique({
+            const message = await this.prisma.ratMessage.findUnique({
                 where: {
-                    guildId: guildId,
+                    guildId,
                 },
             });
-            return Number(server.timeSinceLastSpawn);
+            return message.createdAt.getTime();
         } catch (error) {
             log(error);
         }
@@ -129,12 +84,12 @@ class Database {
         }
     }
 
-    /** @param {string} messageId   */
-    async removeRatMessage(messageId) {
+    /** @param {string} guildId   */
+    async removeRatMessage(guildId) {
         try {
             await this.prisma.ratMessage.delete({
                 where: {
-                    messageId: messageId,
+                    guildId,
                 },
             });
         } catch (error) {
@@ -145,40 +100,33 @@ class Database {
     /** @param {string} guildId  @param {string} userId @param {string} ratType  */
     async claimRat(guildId, userId, ratType) {
         try {
-            const user = await this.prisma.ratCount.findFirst({
-                where: {
-                    guildId: guildId,
-                    userId: userId,
-                    ratType: ratType,
-                },
-            });
-
-            // No user found for this rat type
-            if (user === null) {
-                await this.prisma.ratCount.create({
-                    data: {
-                        guildId: guildId,
-                        userId: userId,
-                        ratType: ratType,
-                        count: 1,
-                    },
-                });
-                // Update users rat count for this rat type
-            } else {
-                const prevCount = user.count;
-                await this.prisma.ratCount.update({
+            await this.prisma.$transaction([
+                this.prisma.user.upsert({
                     where: {
-                        guildId_userId_ratType: {
-                            guildId: guildId,
-                            userId: userId,
-                            ratType: ratType,
+                        id_guildId: {
+                            id: userId,
+                            guildId,
                         },
                     },
-                    data: {
-                        count: prevCount + 1,
+                    update: {},
+                    create: { id: userId, guildId },
+                }),
+
+                this.prisma.ratCount.upsert({
+                    where: {
+                        guildId_userId_ratType: { guildId, userId, ratType },
                     },
-                });
-            }
+                    update: {
+                        count: { increment: 1 },
+                    },
+                    create: {
+                        guildId,
+                        userId,
+                        ratType,
+                        count: 1,
+                    },
+                }),
+            ]);
         } catch (error) {
             log(error);
         }
