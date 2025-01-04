@@ -15,9 +15,11 @@ module.exports = {
         const guild = await db.fetchUsersRats(interaction.guildId);
         const embed = new EmbedBuilder();
 
+        const filteredGuild = guild.filter((user) => user.count > 0);
+
         // TODO: Limit to only 10 users displayed so that the 6000 character limited isn't exceeded
         /** @type {Array<{name: string, value: Number}>} */
-        const formattedGuild = guild.reduce((result, obj) => {
+        const formattedGuild = filteredGuild.reduce((result, obj) => {
             const existingGroup = result.find(
                 (group) => group.name === obj.userId
             );

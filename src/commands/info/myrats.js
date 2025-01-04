@@ -33,7 +33,7 @@ module.exports = {
             .setTitle(`${interaction.user.username}'s rats`)
             .setColor("Random");
 
-        if (user.length !== 0) {
+        if (fields.length !== 0) {
             embed.addFields(fields);
         } else {
             embed.setDescription("Oh nyo! You have no rats. 😭");
