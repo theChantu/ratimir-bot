@@ -97,10 +97,11 @@ class Database {
         }
     }
 
-    /** @param {string} guildId  @param {string} userId @param {string} ratType  */
-    async claimRat(guildId, userId, ratType) {
+    /** @param {string} guildId  @param {string} userId @param {string} ratType @param {number} [amount=1]  */
+    async claimRat(guildId, userId, ratType, amount = 1) {
         try {
             await this.prisma.$transaction([
+                // Create user if not exist
                 this.prisma.user.upsert({
                     where: {
                         id_guildId: {
@@ -111,13 +112,13 @@ class Database {
                     update: {},
                     create: { id: userId, guildId },
                 }),
-
+                // Update user ratcount
                 this.prisma.ratCount.upsert({
                     where: {
                         guildId_userId_ratType: { guildId, userId, ratType },
                     },
                     update: {
-                        count: { increment: 1 },
+                        count: { increment: amount },
                     },
                     create: {
                         guildId,
@@ -127,6 +128,26 @@ class Database {
                     },
                 }),
             ]);
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId  @param {string} userId @param {string} ratType  @param {Number} amount */
+    async removeRat(guildId, userId, ratType, amount) {
+        try {
+            await this.prisma.ratCount.update({
+                where: {
+                    guildId_userId_ratType: {
+                        guildId,
+                        userId,
+                        ratType,
+                    },
+                },
+                data: {
+                    count: { decrement: amount },
+                },
+            });
         } catch (error) {
             log(error);
         }

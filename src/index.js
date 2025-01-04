@@ -195,7 +195,7 @@ client.once("ready", async (client) => {
     }
 
     // Uncomment to immediately spawn a rat when bot is started
-    await intervalFunction();
+    // await intervalFunction();
 
     function setRandomInterval(intervalFunction, minDelay, maxDelay) {
         let timeout;

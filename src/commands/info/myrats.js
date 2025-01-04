@@ -18,13 +18,16 @@ module.exports = {
         );
         const embed = new EmbedBuilder();
 
-        const fields = user.map((rat) => {
-            return {
-                name:
-                    rat.ratType.charAt(0).toUpperCase() + rat.ratType.slice(1),
-                value: rat.count.toString(),
-            };
-        });
+        const fields = user
+            .filter((rat) => rat.count > 0)
+            .map((rat) => {
+                return {
+                    name:
+                        rat.ratType.charAt(0).toUpperCase() +
+                        rat.ratType.slice(1),
+                    value: rat.count.toString(),
+                };
+            });
 
         embed
             .setTitle(`${interaction.user.username}'s rats`)
