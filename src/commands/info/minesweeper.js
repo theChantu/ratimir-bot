@@ -18,6 +18,8 @@ module.exports = {
         .setDescription("Sweep mines. Play for fun or win a rat once a day."),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
+        await interaction.deferReply();
+
         const MAX_BUTTON_PER_ROW = 5;
         // Max 25
         const BUTTON_AMOUNT = 25;
@@ -44,7 +46,7 @@ module.exports = {
             .setTitle("Minesweeper")
             .setDescription("Clear the board without detonating a mine.");
 
-        const reply = await interaction.reply({
+        const reply = await interaction.followUp({
             components,
             embeds: [embed],
         });
@@ -55,9 +57,9 @@ module.exports = {
         });
 
         collector.on("collect", async (i) => {
-            if (i.user.id !== interaction.user.id) return;
-
             await i.deferUpdate();
+
+            if (i.user.id !== interaction.user.id) return;
 
             const index = Number(i.component.customId);
             const col = Math.floor(index / MAX_BUTTON_PER_ROW);
