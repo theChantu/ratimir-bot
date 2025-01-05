@@ -12,6 +12,8 @@ module.exports = {
         .setDescription("Oh shit... my rats."),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
+        await interaction.deferReply();
+
         const user = await db.fetchUsersRats(
             interaction.guildId,
             interaction.user.id
@@ -44,6 +46,6 @@ module.exports = {
             embeds: [embed],
         };
 
-        await interaction.reply(messagePayload);
+        await interaction.followUp(messagePayload);
     },
 };

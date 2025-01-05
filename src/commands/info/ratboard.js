@@ -12,6 +12,8 @@ module.exports = {
         .setDescription("A board with rats."),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
+        await interaction.deferReply();
+
         const guild = await db.fetchUsersRats(interaction.guildId);
         const embed = new EmbedBuilder();
 
@@ -55,6 +57,6 @@ module.exports = {
             embeds: [embed],
         };
 
-        await interaction.reply(messagePayload);
+        await interaction.followUp(messagePayload);
     },
 };

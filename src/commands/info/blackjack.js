@@ -72,14 +72,6 @@ module.exports = {
         game.shuffle();
         game.start();
 
-        // TODO: Check card values at the beginning to see if anyone got a 21 or both.
-        // TODO: If a tie happens the game ends and the player gets their bet back.
-
-        // TODO: This date will be used to let the player know how long until the message buttons stop working
-        // The collector will have a time limit of 5 minutes.
-        // If the game doesn't end and the timer runs out, the player loses the gamble.
-        // Take away the gamble from the users inventory the moment they execute the command.
-
         /** @param {Array<{suit: string, rank: number | string}>} deck */
         function formatDeck(deck, hide = false) {
             let formattedDeck = [...deck];

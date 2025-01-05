@@ -9,8 +9,6 @@ datasource db {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 
-// TODO: Redo DB. FIXME: This will impact most of the code.
-
 model Guild {
   id String @unique
   ratMessage RatMessage?
@@ -24,12 +22,14 @@ model RatMessage {
   createdAt DateTime @default(now())
 }
 
-// FIXME: A user can be in multiple guilds, currently it's only allowing one user in one guild.
+// For future reference, if the db has to be reset, I can create a copy and make a script to transfer user entries into the new db.
 
 model User {
   id String
   guildId String
   ratCount RatCount[]
+  wordleTime DateTime @default("2020-03-19T14:21:00+02:00")
+  minesweeperTime DateTime @default("2020-03-19T14:21:00+02:00")
 
   @@unique([id, guildId])
 }

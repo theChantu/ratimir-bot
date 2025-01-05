@@ -36,6 +36,24 @@ class Database {
         }
     }
 
+    /** @param {string} guildId @param {string} userId  */
+    async addUser(guildId, userId) {
+        try {
+            await this.prisma.user.upsert({
+                where: {
+                    id_guildId: {
+                        id: userId,
+                        guildId,
+                    },
+                },
+                update: {},
+                create: { id: userId, guildId },
+            });
+        } catch (error) {
+            log(error);
+        }
+    }
+
     /** @param {string} guildId  */
     async isRatSpawned(guildId) {
         try {
@@ -179,6 +197,42 @@ class Database {
             });
 
             return guild;
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    async updateUserMinesweeperTime(guildId, userId) {
+        try {
+            await this.prisma.user.update({
+                where: {
+                    id_guildId: {
+                        id: userId,
+                        guildId,
+                    },
+                },
+                data: {
+                    minesweeperTime: new Date(),
+                },
+            });
+        } catch (error) {
+            log(error);
+        }
+    }
+
+    /** @param {string} guildId @param {string} userId   */
+    async fetchUserMinesweeperTime(guildId, userId) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    id_guildId: {
+                        id: userId,
+                        guildId,
+                    },
+                },
+            });
+
+            return user;
         } catch (error) {
             log(error);
         }
