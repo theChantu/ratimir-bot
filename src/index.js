@@ -237,12 +237,6 @@ client.once("ready", async (client) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-    try {
-        await db.addUser(interaction.guildId, interaction.user.id);
-    } catch (error) {
-        log(error);
-    }
-
     if (!interaction.isChatInputCommand() || interaction.isButton()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);

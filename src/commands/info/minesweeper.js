@@ -20,6 +20,9 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        // TODO: Temp fix
+        await db.addUser(interaction.guildId, interaction.user.id);
+
         const MAX_BUTTON_PER_ROW = 5;
         // Max 25
         const BUTTON_AMOUNT = 25;
