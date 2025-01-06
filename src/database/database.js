@@ -221,8 +221,21 @@ class Database {
     }
 
     /** @param {string} guildId @param {string} userId   */
-    async fetchUserMinesweeperTime(guildId, userId) {
+    async fetchUser(guildId, userId) {
         try {
+            await this.prisma.user.upsert({
+                where: {
+                    id_guildId: {
+                        id: userId,
+                        guildId,
+                    },
+                },
+                update: {},
+                create: {
+                    id: userId,
+                    guildId,
+                },
+            });
             const user = await this.prisma.user.findUnique({
                 where: {
                     id_guildId: {

@@ -1,25 +1,30 @@
+const events = require("events");
+
 /**
  * @typedef {Object} cell
  * @property {boolean} revealed
  * @property {Number} number
  */
 
-class Minesweeper {
+class Minesweeper extends events {
     /** @param {Number} col  @param {Number} row  */
     constructor(col, row) {
+        super();
         this.colSize = col;
         this.rowSize = row;
         /** @type {Array<Array<cell>> | undefined} */
         this.board;
+        this.mineCount = 0;
     }
 
-    /** @param {Number} col  @param {Number} row  @param {Number} omitCol @param {Number} omitRow  */
-    generateBoard(row, col, omitCol, omitRow) {
+    start() {
+        const omitCol = Math.floor(Math.random() * this.colSize);
+        const omitRow = Math.floor(Math.random() * this.rowSize);
         // -1 = BOMB, 0 or Infinity = NOT BOMB
         const board = [];
-        for (let i = 0; i < col; i++) {
+        for (let i = 0; i < this.colSize; i++) {
             const col = [];
-            for (let j = 0; j < row; j++) {
+            for (let j = 0; j < this.rowSize; j++) {
                 if (i === omitCol && j === omitRow) {
                     col.push({
                         revealed: true,
@@ -31,15 +36,20 @@ class Minesweeper {
                     revealed: false,
                 };
                 const randomNum = Math.floor(Math.random() * 100 + 1);
-                randomNum <= 70 ? (obj.number = 0) : (obj.number = -1);
+                if (randomNum <= 70) {
+                    obj.number = 0;
+                } else {
+                    obj.number = -1;
+                    this.mineCount += 1;
+                }
                 col.push(obj);
             }
             board.push(col);
         }
 
         // Generate numbers
-        for (let i = 0; i < col; i++) {
-            for (let j = 0; j < row; j++) {
+        for (let i = 0; i < this.colSize; i++) {
+            for (let j = 0; j < this.rowSize; j++) {
                 if (board[i][j].number !== -1) {
                     const neighbors = this.getNeighbors(i, j);
                     // console.log(board[i][j]);
@@ -55,6 +65,8 @@ class Minesweeper {
         }
 
         this.board = board;
+
+        this.reveal(omitCol, omitRow);
     }
 
     /** @param {Number} col @param {Number} row   */
@@ -111,7 +123,10 @@ class Minesweeper {
     sweeped() {
         for (const row of this.board) {
             for (const cell of row) {
-                if (cell.number !== -1 && cell.revealed === false) {
+                if (
+                    (cell.number !== -1 && cell.revealed === false) ||
+                    (cell.number === -1 && cell.revealed === true)
+                ) {
                     return false;
                 }
             }

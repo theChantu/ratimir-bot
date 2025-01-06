@@ -42,9 +42,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
-        // TODO: Temp fix
-        await db.addUser(interaction.guildId, interaction.user.id);
-
         const ratType = interaction.options.get("rat").value;
         const amount = interaction.options.get("amount").value;
 
