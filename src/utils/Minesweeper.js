@@ -1,4 +1,13 @@
 const events = require("events");
+const {
+    ActionRowBuilder,
+    CommandInteraction,
+    ButtonStyle,
+    createMessageComponentCollector,
+    ComponentType,
+    ButtonBuilder,
+    EmbedBuilder,
+} = require("discord.js");
 
 /**
  * @typedef {Object} cell
@@ -8,16 +17,92 @@ const events = require("events");
 
 class Minesweeper extends events {
     /** @param {Number} col  @param {Number} row  */
-    constructor(col, row) {
+    constructor(col, row, interaction) {
         super();
         this.colSize = col;
         this.rowSize = row;
         /** @type {Array<Array<cell>> | undefined} */
         this.board;
         this.mineCount = 0;
+        /** @type {CommandInteraction} */
+        this.interaction = interaction;
     }
 
-    start() {
+    async start() {
+        await this.interaction.deferReply();
+
+        this.generateBoard();
+
+        const components = this.generateComponents();
+
+        const embed = new EmbedBuilder()
+            .setTitle("MINESWEEPER")
+            .setDescription("Clear the board without detonating a mine.")
+            .setFields({
+                name: "Mines",
+                value: this.mineCount.toString(),
+            });
+
+        const reply = await this.interaction.followUp({
+            components,
+            embeds: [embed],
+        });
+
+        const collector = reply.createMessageComponentCollector({
+            componentType: ComponentType.Button,
+            time: 5 * 60 * 1000,
+        });
+
+        collector.on("collect", async (i) => {
+            await i.deferUpdate();
+
+            if (i.user.id !== this.interaction.user.id) return;
+
+            const index = Number(i.component.customId);
+            const col = Math.floor(index / this.rowSize);
+            const row = index % this.rowSize;
+
+            this.reveal(col, row);
+
+            const components = this.generateComponents();
+
+            const sweeped = this.sweeped();
+
+            await i.editReply({
+                components,
+            });
+
+            if (this.board[col][row].number === -1) {
+                this.emit("bomb");
+            } else if (sweeped) {
+                this.emit("sweeped");
+            }
+
+            if (sweeped || this.board[col][row].number === -1) {
+                collector.stop();
+            }
+        });
+
+        collector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+                const embed = new EmbedBuilder()
+                    .setTitle("MINESWEEPER")
+                    .setDescription("Time has run out.");
+
+                await reply.edit({
+                    embeds: [embed],
+                });
+            }
+        });
+
+        // Handle case where board is already sweeped
+        if (this.sweeped() === true) {
+            this.emit("sweeped");
+            collector.stop();
+        }
+    }
+
+    generateBoard() {
         const omitCol = Math.floor(Math.random() * this.colSize);
         const omitRow = Math.floor(Math.random() * this.rowSize);
         // -1 = BOMB, 0 or Infinity = NOT BOMB
@@ -36,7 +121,7 @@ class Minesweeper extends events {
                     revealed: false,
                 };
                 const randomNum = Math.floor(Math.random() * 100 + 1);
-                if (randomNum <= 70) {
+                if (randomNum <= 80) {
                     obj.number = 0;
                 } else {
                     obj.number = -1;
@@ -52,8 +137,6 @@ class Minesweeper extends events {
             for (let j = 0; j < this.rowSize; j++) {
                 if (board[i][j].number !== -1) {
                     const neighbors = this.getNeighbors(i, j);
-                    // console.log(board[i][j]);
-                    // console.log(neighbors);
                     for (const neighbor of neighbors) {
                         const [nCol, nRow] = neighbor;
                         if (board[nCol][nRow].number === -1) {
@@ -132,6 +215,45 @@ class Minesweeper extends events {
             }
         }
         return true;
+    }
+
+    generateComponents() {
+        const MAX_BUTTON_PER_ROW = this.rowSize;
+        const BUTTON_AMOUNT = this.colSize * this.rowSize;
+
+        const components = [];
+        let count = 0;
+
+        for (let i = 0; i < BUTTON_AMOUNT / MAX_BUTTON_PER_ROW; i++) {
+            const row = new ActionRowBuilder();
+            for (let j = 0; j < MAX_BUTTON_PER_ROW; j++) {
+                const buttonRevealed = this.board[i][j].revealed;
+                const buttonNumber = this.board[i][j].number;
+
+                const cell = new ButtonBuilder().setCustomId(`${count}`);
+
+                if (buttonRevealed) {
+                    if (buttonNumber === -1) {
+                        cell.setLabel("💣").setStyle(ButtonStyle.Danger);
+                    } else if (buttonNumber === 0) {
+                        cell.setLabel(
+                            this.board[i][j].number.toString()
+                        ).setStyle(ButtonStyle.Success);
+                    } else {
+                        cell.setLabel(
+                            this.board[i][j].number.toString()
+                        ).setStyle(ButtonStyle.Primary);
+                    }
+                } else {
+                    cell.setLabel("?").setStyle(ButtonStyle.Secondary);
+                }
+                row.addComponents(cell);
+                count++;
+            }
+            components.push(row);
+        }
+
+        return components;
     }
 }
 
