@@ -22,10 +22,9 @@ module.exports = {
     async execute(interaction) {
         const NUM_OF_COLS = 5;
         const NUM_OF_ROWS = 5;
-        // const MIN_BOMBS = 5;
-        // const MAX_BOMBS = 8;
-        const MIN_BOMBS = 1;
-        const MAX_BOMBS = 2;
+
+        const MIN_BOMBS = 5;
+        const MAX_BOMBS = 8;
 
         const game = new Minesweeper(
             NUM_OF_COLS,
