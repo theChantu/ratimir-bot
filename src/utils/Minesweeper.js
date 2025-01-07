@@ -16,15 +16,16 @@ const {
  */
 
 class Minesweeper extends events {
-    /** @param {Number} col  @param {Number} row  */
-    constructor(col, row, interaction) {
+    /** @param {Number} col  @param {Number} row  @param {Number} minBomb @param {Number} maxBomb  @param {CommandInteraction} interaction   */
+    constructor(col, row, minBomb, maxBomb, interaction) {
         super();
+        this.minBomb = minBomb;
+        this.maxBomb = maxBomb;
         this.colSize = col;
         this.rowSize = row;
         /** @type {Array<Array<cell>> | undefined} */
         this.board;
         this.mineCount = 0;
-        /** @type {CommandInteraction} */
         this.interaction = interaction;
     }
 
@@ -105,31 +106,50 @@ class Minesweeper extends events {
     generateBoard() {
         const omitCol = Math.floor(Math.random() * this.colSize);
         const omitRow = Math.floor(Math.random() * this.rowSize);
-        // -1 = BOMB, 0 or Infinity = NOT BOMB
+
+        const NUM_OF_BOMBS = Math.floor(
+            Math.random() * (this.maxBomb - this.minBomb + 1) + this.minBomb
+        );
+
+        this.mineCount = NUM_OF_BOMBS;
+
+        const bombPositions = [];
+
+        // Generate bombs
+        while (bombPositions.length < NUM_OF_BOMBS) {
+            const col = Math.floor(Math.random() * this.colSize);
+            const row = Math.floor(Math.random() * this.rowSize);
+
+            // Bomb is starting cell
+            if (col === omitCol && row === omitRow) continue;
+            // Bomb pos already pushed
+            if (bombPositions.some((obj) => obj.col === col && obj.row === row))
+                continue;
+
+            bombPositions.push({
+                col,
+                row,
+            });
+        }
+
+        // Populate 2D array board with objects
         const board = [];
         for (let i = 0; i < this.colSize; i++) {
             const col = [];
             for (let j = 0; j < this.rowSize; j++) {
-                if (i === omitCol && j === omitRow) {
-                    col.push({
-                        revealed: true,
-                        number: 0,
-                    });
-                    continue;
-                }
-                const obj = {
+                col.push({
                     revealed: false,
-                };
-                const randomNum = Math.floor(Math.random() * 100 + 1);
-                if (randomNum <= 80) {
-                    obj.number = 0;
-                } else {
-                    obj.number = -1;
-                    this.mineCount += 1;
-                }
-                col.push(obj);
+                    number: 0,
+                });
             }
             board.push(col);
+        }
+
+        // Fill in the bomb positions to the board
+        for (const bombPosition of bombPositions) {
+            const { col, row } = bombPosition;
+
+            board[col][row].number = -1;
         }
 
         // Generate numbers

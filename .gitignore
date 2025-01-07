@@ -8,5 +8,6 @@ ideas.md
 pnpm-lock.yaml
 src/database/database.db
 src/database/database.db-journal
+src/database/words.txt
 testing.js
 prisma/migrations

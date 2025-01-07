@@ -19,7 +19,18 @@ module.exports = {
         .setDescription("Sweep mines. Play for fun or win a rat once per day."),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
-        const game = new Minesweeper(5, 5, interaction);
+        const NUM_OF_COLS = 5;
+        const NUM_OF_ROWS = 5;
+        const MIN_BOMBS = 5;
+        const MAX_BOMBS = 8;
+
+        const game = new Minesweeper(
+            NUM_OF_COLS,
+            NUM_OF_ROWS,
+            MIN_BOMBS,
+            MAX_BOMBS,
+            interaction
+        );
         game.start();
 
         game.on("bomb", async () => {
