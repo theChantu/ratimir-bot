@@ -12,6 +12,7 @@ const {
 const { db } = require("../../database/database");
 const { Minesweeper } = require("../../utils/Minesweeper");
 const { getRandomRat } = require("../../utils/getRandomRat");
+const { formatMilliseconds } = require("../../utils/formatMilliseconds");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,8 +22,10 @@ module.exports = {
     async execute(interaction) {
         const NUM_OF_COLS = 5;
         const NUM_OF_ROWS = 5;
-        const MIN_BOMBS = 5;
-        const MAX_BOMBS = 8;
+        // const MIN_BOMBS = 5;
+        // const MAX_BOMBS = 8;
+        const MIN_BOMBS = 1;
+        const MAX_BOMBS = 2;
 
         const game = new Minesweeper(
             NUM_OF_COLS,
@@ -99,7 +102,9 @@ module.exports = {
                 );
             } else {
                 embed.setDescription(
-                    `${interaction.user.globalName} won nothing!`
+                    `${interaction.user.globalName} has **${formatMilliseconds(
+                        userTime + dayInMilliseconds - currentTime
+                    )}** until they can win another rat.`
                 );
             }
 
