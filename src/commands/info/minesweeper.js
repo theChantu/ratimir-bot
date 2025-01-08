@@ -34,7 +34,6 @@ module.exports = {
             MAX_BOMBS,
             interaction
         );
-        await game.start();
 
         game.on("bomb", async () => {
             try {
@@ -120,5 +119,7 @@ module.exports = {
                 log(error);
             }
         });
+
+        await game.start();
     },
 };
