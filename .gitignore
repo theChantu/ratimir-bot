@@ -8,6 +8,8 @@ ideas.md
 pnpm-lock.yaml
 src/database/database.db
 src/database/database.db-journal
-src/database/words.txt
+src/database/words.json
 testing.js
 prisma/migrations
+src/commands/info/wordle.js
+src/utils/Wordle.js

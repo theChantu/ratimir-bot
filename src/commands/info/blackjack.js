@@ -40,16 +40,15 @@ module.exports = {
         ),
     /**@param {CommandInteraction} interaction  */
     async execute(interaction) {
-        await interaction.deferReply();
+        await interaction.deferReply().catch(() => {});
 
         const ratType = interaction.options.get("rat").value;
         const amount = interaction.options.get("amount").value;
 
         // Check if user has enough to gamble
-        const userRats = await db.fetchUsersRats(
-            interaction.guildId,
-            interaction.user.id
-        );
+        const userRats = await db
+            .fetchUsersRats(interaction.guildId, interaction.user.id)
+            .catch(() => {});
         const foundRat = userRats.find((rat) => rat.ratType === ratType);
 
         if (foundRat === undefined || foundRat.count < amount) {
@@ -61,12 +60,14 @@ module.exports = {
         }
 
         // Remove rats from user balance
-        await db.removeRat(
-            interaction.guildId,
-            interaction.user.id,
-            ratType,
-            amount
-        );
+        await db
+            .removeRat(
+                interaction.guildId,
+                interaction.user.id,
+                ratType,
+                amount
+            )
+            .catch(() => {});
 
         const game = new Blackjack();
         game.shuffle();
@@ -124,10 +125,12 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(hit, stand);
 
-        const reply = await interaction.followUp({
-            components: [row],
-            embeds: [embed],
-        });
+        const reply = await interaction
+            .followUp({
+                components: [row],
+                embeds: [embed],
+            })
+            .catch(() => {});
 
         const collector = reply.createMessageComponentCollector({
             componentType: ComponentType.Button,
@@ -135,14 +138,16 @@ module.exports = {
         });
 
         collector.on("collect", async (i) => {
-            await i.deferUpdate();
+            await i.deferUpdate().catch(() => {});
 
             // Return if original command executer is not interacting with the buttons
             if (i.user.id !== interaction.user.id) {
-                await i.followUp({
-                    content: "This is not meant for you! 😡",
-                    flags: MessageFlags.Ephemeral,
-                });
+                await i
+                    .followUp({
+                        content: "This is not meant for you! 😡",
+                        flags: MessageFlags.Ephemeral,
+                    })
+                    .catch(() => {});
 
                 return;
             }
@@ -255,23 +260,27 @@ module.exports = {
                             amount * 2
                         } ${ratType} rats! 🎉`
                     );
-                    await db.claimRat(
-                        interaction.guildId,
-                        interaction.user.id,
-                        ratType,
-                        amount * 2
-                    );
+                    await db
+                        .claimRat(
+                            interaction.guildId,
+                            interaction.user.id,
+                            ratType,
+                            amount * 2
+                        )
+                        .catch(() => {});
                     // Tie
                 } else if (game.dealerValue === game.playerValue) {
                     embed.setDescription(
                         `A tie? ${interaction.user.globalName} wins absolutely nothing!`
                     );
-                    await db.claimRat(
-                        interaction.guildId,
-                        interaction.user.id,
-                        ratType,
-                        amount
-                    );
+                    await db
+                        .claimRat(
+                            interaction.guildId,
+                            interaction.user.id,
+                            ratType,
+                            amount
+                        )
+                        .catch(() => {});
                     // Player loses
                 } else {
                     embed.setDescription(

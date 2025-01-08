@@ -3,10 +3,11 @@ const {
     ActionRowBuilder,
     CommandInteraction,
     ButtonStyle,
-    createMessageComponentCollector,
     ComponentType,
     ButtonBuilder,
     EmbedBuilder,
+    MessagePayload,
+    InteractionCollector,
 } = require("discord.js");
 
 /**
@@ -30,7 +31,7 @@ class Minesweeper extends events {
     }
 
     async start() {
-        await this.interaction.deferReply();
+        await this.interaction.deferReply().catch(() => {});
 
         this.generateBoard();
 
@@ -44,18 +45,21 @@ class Minesweeper extends events {
                 value: this.mineCount.toString(),
             });
 
-        const reply = await this.interaction.followUp({
-            components,
-            embeds: [embed],
-        });
+        const reply = await this.interaction
+            .followUp({
+                components,
+                embeds: [embed],
+            })
+            .catch(() => {});
 
+        /** @type {InteractionCollector} */
         const collector = reply.createMessageComponentCollector({
             componentType: ComponentType.Button,
             time: 5 * 60 * 1000,
         });
 
         collector.on("collect", async (i) => {
-            await i.deferUpdate();
+            await i.deferUpdate().catch(() => {});
 
             if (i.user.id !== this.interaction.user.id) return;
 
@@ -69,9 +73,7 @@ class Minesweeper extends events {
 
             const sweeped = this.sweeped();
 
-            await i.editReply({
-                components,
-            });
+            await this.sendMessage({ components });
 
             if (this.board[col][row].number === -1) {
                 this.emit("bomb");
@@ -90,9 +92,11 @@ class Minesweeper extends events {
                     .setTitle("MINESWEEPER")
                     .setDescription("Time has run out.");
 
-                await reply.edit({
-                    embeds: [embed],
-                });
+                await reply
+                    .edit({
+                        embeds: [embed],
+                    })
+                    .catch(() => {});
             }
         });
 
@@ -101,6 +105,11 @@ class Minesweeper extends events {
             this.emit("sweeped");
             collector.stop();
         }
+    }
+
+    /** @param {MessagePayload} content */
+    async sendMessage(content) {
+        return await this.interaction.editReply(content).catch(() => {});
     }
 
     generateBoard() {
