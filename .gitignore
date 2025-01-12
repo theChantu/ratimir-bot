@@ -11,5 +11,3 @@ src/database/database.db-journal
 src/database/words.json
 testing.js
 prisma/migrations
-src/commands/info/wordle.js
-src/utils/Wordle.js

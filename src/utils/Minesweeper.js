@@ -9,6 +9,7 @@ const {
     MessagePayload,
     InteractionCollector,
 } = require("discord.js");
+const { Message } = require("discord.js");
 
 /**
  * @typedef {Object} cell
@@ -45,12 +46,10 @@ class Minesweeper extends events {
                 value: this.mineCount.toString(),
             });
 
-        const reply = await this.interaction
-            .followUp({
-                components,
-                embeds: [embed],
-            })
-            .catch(() => {});
+        const reply = await this.sendMessage({
+            components,
+            embeds: [embed],
+        });
 
         /** @type {InteractionCollector} */
         const collector = reply.createMessageComponentCollector({

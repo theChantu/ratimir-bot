@@ -22,6 +22,7 @@
     "dependencies": {
         "@google-ai/generativelanguage": "^0.2.1",
         "@google/generative-ai": "0.19.0",
+        "@napi-rs/canvas": "^0.1.65",
         "@prisma/client": "^6.1.0",
         "discord.js": "^14.17.2",
         "fs": "0.0.1-security",
