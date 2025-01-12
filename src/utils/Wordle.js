@@ -99,7 +99,7 @@ class Wordle extends events {
 
         collector.on("end", async (collected, reason) => {
             if (reason === "time") {
-                const description = `Time has run out the word was ${this.word.toUpperCase()}.`;
+                const description = `Time has run out the word was **${this.word.toUpperCase()}**`;
 
                 const attachment = await this.generateAttachment();
 

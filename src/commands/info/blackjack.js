@@ -36,6 +36,8 @@ module.exports = {
             option
                 .setName("amount")
                 .setDescription("The amount of this rat type to gamble")
+                .setMinValue(1)
+                .setMaxValue(500)
                 .setRequired(true)
         ),
     /**@param {CommandInteraction} interaction  */
@@ -52,10 +54,12 @@ module.exports = {
         const foundRat = userRats.find((rat) => rat.ratType === ratType);
 
         if (foundRat === undefined || foundRat.count < amount) {
-            interaction.followUp({
-                content: "You don't have enough rats! 😭",
-                flags: MessageFlags.Ephemeral,
-            });
+            await interaction
+                .followUp({
+                    content: "You don't have enough rats! 😭",
+                    flags: MessageFlags.Ephemeral,
+                })
+                .catch(() => {});
             return;
         }
 
