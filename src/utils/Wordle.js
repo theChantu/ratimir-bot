@@ -60,7 +60,7 @@ class Wordle extends events {
         const collector = await this.interaction.channel.createMessageCollector(
             {
                 filter: collectorFilter,
-                time: 5 * 60 * 1000,
+                time: 15 * 60 * 1000,
             }
         );
 
@@ -88,11 +88,11 @@ class Wordle extends events {
 
             await this.sendMessage({ embeds: [embed], files: [attachment] });
 
-            if (guess === this.word) {
-                collector.stop();
-                this.emit("win");
-            } else if (this.guesses.length === this.attempts) {
+            if (this.guesses.length >= this.attempts) {
                 this.emit("lose");
+                collector.stop();
+            } else if (guess === this.word) {
+                this.emit("win");
                 collector.stop();
             }
         });
@@ -132,18 +132,46 @@ class Wordle extends events {
 
         for (let i = 0; i < this.attempts; i++) {
             if (this.guesses[i] !== undefined) {
-                [...this.guesses[i]].forEach((letter, j) => {
+                const guess = this.guesses[i];
+                const remainingLetters = this.word.split("");
+                const letters = [];
+
+                for (let j = 0; j < this.word.length; j++) {
+                    if (this.word[j] === guess[j]) {
+                        const indexOfLetter = remainingLetters.findIndex(
+                            (element) => element === guess[j]
+                        );
+                        remainingLetters.splice(indexOfLetter, 1);
+                        letters[j] = 2;
+                    } else {
+                        letters[j] = 0;
+                    }
+                }
+
+                for (let j = 0; j < this.word.length; j++) {
+                    if (
+                        this.word[j] !== guess[j] &&
+                        remainingLetters.includes(guess[j])
+                    ) {
+                        letters[j] = 1;
+                    }
+                }
+
+                for (let j = 0; j < letters.length; j++) {
                     const x = j * (boxSize + padding);
                     const y = i * (boxSize + padding);
 
-                    // Draw box
-                    if (this.word[j] !== letter && this.word.includes(letter)) {
-                        ctx.fillStyle = "#b59f3b";
-                    } else if (this.word[j] === letter) {
+                    if (letters[j] === 2) {
+                        // GREEN
                         ctx.fillStyle = "#538d4e";
+                    } else if (letters[j] === 1) {
+                        // YELLOW
+                        ctx.fillStyle = "#b59f3b";
                     } else {
+                        // GRAY
                         ctx.fillStyle = "gray";
                     }
+
                     ctx.fillStyle = ctx.fillRect(x, y, boxSize, boxSize);
 
                     // Draw letter
@@ -152,11 +180,11 @@ class Wordle extends events {
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     ctx.fillText(
-                        letter.toUpperCase(),
+                        guess[j].toUpperCase(),
                         x + boxSize / 2,
                         y + boxSize / 2
                     );
-                });
+                }
             } else {
                 for (let j = 0; j < this.wordLength; j++) {
                     const x = j * (boxSize + padding);
