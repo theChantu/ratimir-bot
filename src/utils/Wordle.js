@@ -8,6 +8,7 @@ const {
     EmbedBuilder,
     MessageCollector,
     MessagePayload,
+    MessageCollectorOptions,
 } = require("discord.js");
 const Canvas = require("@napi-rs/canvas");
 const { MIN_WORD_LENGTH, MAX_WORD_LENGTH } = require("../config/globals");
@@ -56,12 +57,14 @@ class Wordle extends events {
             m.author.id === this.interaction.user.id &&
             m.content.startsWith("!");
 
+        /** @type {MessageCollectorOptions} */
+        const collectorOptions = {
+            filter: collectorFilter,
+            idle: 5 * 60 * 1000,
+        };
         /** @type {MessageCollector} */
         const collector = await this.interaction.channel.createMessageCollector(
-            {
-                filter: collectorFilter,
-                time: 15 * 60 * 1000,
-            }
+            collectorOptions
         );
 
         collector.on("collect", async (i) => {
@@ -98,8 +101,8 @@ class Wordle extends events {
         });
 
         collector.on("end", async (collected, reason) => {
-            if (reason === "time") {
-                const description = `Time has run out the word was **${this.word.toUpperCase()}**`;
+            if (reason === "idle") {
+                const description = `The game has ended due to inactivity. The word was **${this.word.toUpperCase()}**`;
 
                 const attachment = await this.generateAttachment();
 
