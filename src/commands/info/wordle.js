@@ -115,7 +115,9 @@ module.exports = {
                 const embed = new EmbedBuilder()
                     .setTitle("WORDLE")
                     .setDescription(
-                        `The word was **${game.word.toUpperCase()}**`
+                        `${
+                            interaction.user.displayName
+                        } ran out of guesses. The word was **${game.word.toUpperCase()}**`
                     )
                     .setImage("attachment://wordle.png");
                 await interaction.editReply({

@@ -80,6 +80,9 @@ class Wordle extends events {
 
             this.guesses.push(guess);
 
+            if (guess === this.word || this.guesses.length >= this.attempts)
+                collector.stop();
+
             const attachment = await this.generateAttachment();
 
             const embed = new EmbedBuilder()
@@ -91,12 +94,10 @@ class Wordle extends events {
 
             await this.sendMessage({ embeds: [embed], files: [attachment] });
 
-            if (this.guesses.length >= this.attempts) {
+            if (this.guesses.length >= this.attempts && guess !== this.word) {
                 this.emit("lose");
-                collector.stop();
             } else if (guess === this.word) {
                 this.emit("win");
-                collector.stop();
             }
         });
 
