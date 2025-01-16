@@ -14,12 +14,13 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        const LIMIT = 10;
+
         const guild = await db.fetchUsersRats(interaction.guildId);
         const embed = new EmbedBuilder();
 
         const filteredGuild = guild.filter((user) => user.count > 0);
 
-        // TODO: Limit to only 10 users displayed so that the 6000 character limited isn't exceeded
         /** @type {Array<{name: string, value: Number}>} */
         const formattedGuild = filteredGuild.reduce((result, obj) => {
             const existingGroup = result.find(
@@ -45,6 +46,8 @@ module.exports = {
                 name: `${(index + 1).toString()}.`,
                 value: `<@${user.name}> ${user.value.toString()}`,
             });
+
+            if (index === LIMIT - 1) break;
         }
 
         embed
